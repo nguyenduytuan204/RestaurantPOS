@@ -239,7 +239,7 @@
     </div>
   </main>
 
-  <div id="cartActionState" class="cart-footer" style="display: none;">
+  <div id="cartActionState" class="cart-footer hidden">
       <div style="padding: 15px; background: white; border-top: 1px solid #ddd;">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:700; font-size:18px;">
           <span>Tổng tiền:</span>
@@ -586,6 +586,7 @@
         badge.textContent = totalItems;
         badge.style.display = totalItems > 0 ? 'flex' : 'none';
       }
+      syncFooterVisibility();
     }
 
     // --- CART RENDERERS ---
