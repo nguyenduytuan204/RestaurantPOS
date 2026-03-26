@@ -243,9 +243,8 @@
           <span>Tổng tiền:</span>
           <span id="cartTotalPrice" style="color:var(--brand);">0đ</span>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <button class="btn btn-brand" style="width:100%; height:45px;" onclick="submitOrder()">Gửi món</button>
-          <button class="btn" style="width:100%; height:45px; background:#005baa; color:white;" onclick="payWithVnPay()">Thanh toán VNPay</button>
+        <div style="display:grid; grid-template-columns: 1fr; gap:10px;">
+          <button class="btn btn-brand" style="width:100%; height:45px; background: #b01267; color:white; border:none; border-radius:8px; font-weight:700;" onclick="submitOrder()">Gửi món</button>
         </div>
       </div>
     <div class="cart-footer-bottom">
@@ -651,27 +650,6 @@
       }
     }
 
-    async function payWithVnPay() {
-      if (!state.selectedTable || !state.selectedTable.orderId) {
-        showToast("Vui lòng chọn bàn!", "error");
-        return;
-      }
-      if (Object.keys(state.cart).length > 0) {
-        const ok = await submitOrder(true);
-        if (!ok) return;
-      }
-      showLoader(true);
-      try {
-        const res = await Auth.apiFetch(`${API}/vnpay/create-payment/${state.selectedTable.orderId}`, { method: 'POST' });
-        if (res && res.ok) {
-          const data = await res.json();
-          window.location.href = data.paymentUrl;
-        } else {
-          showToast("Lỗi tạo link thanh toán", "error");
-        }
-      } catch(e) { showToast("Lỗi kết nối", "error"); }
-      showLoader(false);
-    }
 
     // --- INITIALIZATION ---
     window.onload = async () => {

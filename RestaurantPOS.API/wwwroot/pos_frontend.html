@@ -235,7 +235,8 @@
       /* White for red topbar */
       margin-left: 4px;
       vertical-align: middle;
-      pointer-events: none; /* Let parent handle click */
+      pointer-events: none;
+      /* Let parent handle click */
     }
 
     .search-icon-img {
@@ -325,7 +326,7 @@
       flex-direction: column;
       z-index: 2000;
       overflow: hidden;
-      border: 1px solid rgba(0,0,0,0.08);
+      border: 1px solid rgba(0, 0, 0, 0.08);
       animation: dropdownIn .25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -336,8 +337,15 @@
     }
 
     @keyframes dropdownIn {
-      from { opacity: 0; transform: translateY(-10px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     .user-dropdown.show {
@@ -392,7 +400,10 @@
       padding: 4px;
       transition: color 0.2s;
     }
-    .ud-close:hover { color: #555; }
+
+    .ud-close:hover {
+      color: #555;
+    }
 
     /* Grid Section */
     .ud-grid {
@@ -415,9 +426,17 @@
       transition: background 0.2s;
     }
 
-    [data-theme="dark"] .ud-grid-item { color: #bbb; }
-    .ud-grid-item:hover { background: #f5f7f9; }
-    [data-theme="dark"] .ud-grid-item:hover { background: #2a2a2a; }
+    [data-theme="dark"] .ud-grid-item {
+      color: #bbb;
+    }
+
+    .ud-grid-item:hover {
+      background: #f5f7f9;
+    }
+
+    [data-theme="dark"] .ud-grid-item:hover {
+      background: #2a2a2a;
+    }
 
     .ud-grid-icon {
       width: 36px;
@@ -438,7 +457,9 @@
       padding: 6px 0;
     }
 
-    [data-theme="dark"] .ud-section { border-color: #2a2a2a; }
+    [data-theme="dark"] .ud-section {
+      border-color: #2a2a2a;
+    }
 
     .ud-list-item {
       display: flex;
@@ -450,9 +471,17 @@
       transition: background 0.2s;
     }
 
-    [data-theme="dark"] .ud-list-item { color: #ccc; }
-    .ud-list-item:hover { background: #fafafa; }
-    [data-theme="dark"] .ud-list-item:hover { background: #262626; }
+    [data-theme="dark"] .ud-list-item {
+      color: #ccc;
+    }
+
+    .ud-list-item:hover {
+      background: #fafafa;
+    }
+
+    [data-theme="dark"] .ud-list-item:hover {
+      background: #262626;
+    }
 
     .ud-list-icon {
       width: 24px;
@@ -463,9 +492,18 @@
       justify-content: center;
     }
 
-    [data-theme="dark"] .ud-list-icon { color: #888; }
-    .ud-list-text { flex: 1; }
-    .ud-list-arrow { font-size: 11px; color: #ccc; }
+    [data-theme="dark"] .ud-list-icon {
+      color: #888;
+    }
+
+    .ud-list-text {
+      flex: 1;
+    }
+
+    .ud-list-arrow {
+      font-size: 11px;
+      color: #ccc;
+    }
 
     .ud-logout {
       color: #df2020 !important;
@@ -1753,7 +1791,8 @@
             <div class="f-icons"><span><i class="fa-solid fa-pen"></i></span> <span><i
                   class="fa-solid fa-rotate-right"></i></span> <span><i class="fa-solid fa-calendar-days"></i></span>
               <span><i class="fa-solid fa-file-invoice"></i></span> <span><i
-                  class="fa-solid fa-comment-dots"></i></span></div>
+                  class="fa-solid fa-comment-dots"></i></span>
+            </div>
           </div>
           <div class="f-total-sec">
             <div class="f-total-lbl" data-i18n="totalLabel">Tổng tiền</div>
@@ -2161,10 +2200,10 @@
           fetch(`${API}/products`),
           fetch(`${API}/products/categories`)
         ]);
-        
+
         if (prodRes.ok) state.menuItems = await prodRes.json();
         if (catRes.ok) state.categories = await catRes.json();
-        
+
         renderMenuCatChips();
         renderMenuGrid();
       } catch (e) {
@@ -2537,7 +2576,7 @@
       ).join('');
 
       document.getElementById('pmCashInput').value = total;
-      calcPayChange(); 
+      calcPayChange();
       if (state.paymentMethods.length > 0) {
         selectPayTab(state.paymentMethods[0].paymentMethodID);
       } else {
@@ -2554,7 +2593,7 @@
       state.selectedPaymentMethodID = id;
       const tabs = [1, 2, 3]; // We still have 3 UI slots
       const dark = currentTheme === 'dark';
-      
+
       tabs.forEach(i => {
         const el = document.getElementById('pmTab' + i);
         // Map UI slot to ID logic: pmTab1=ID 1, pmTab2=ID 2, pmTab3=ID 3
@@ -2592,10 +2631,10 @@
         const res = await fetch(`${API}/orders/${state.activeOrderId}/checkout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            paymentMethodID: state.selectedPaymentMethodID, 
-            discount: 0, 
-            customerPaid: paid 
+          body: JSON.stringify({
+            paymentMethodID: state.selectedPaymentMethodID,
+            discount: 0,
+            customerPaid: paid
           }),
         });
         if (!res.ok) throw new Error(res.statusText);
@@ -2604,7 +2643,7 @@
         state.selectedTableName = ''; state.activeOrderId = null;
         updateCartUI();
         await loadFloorMap();
-        showToast('Thanh toán hoàn tất! 🎉');
+        showToast('Thanh toán hoàn tất!');
       } catch (e) {
         console.error(e); showToast('⚠️ Thanh toán thất bại!');
       }
