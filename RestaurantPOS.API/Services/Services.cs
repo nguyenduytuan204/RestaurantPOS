@@ -661,16 +661,20 @@ public class DashboardService : IDashboardService
                 .ToListAsync();
 
             // 2. Doanh thu hôm qua
-            var yesterdayRevenue = await _db.Orders
+            var yesterdayOrders = await _db.Orders
                 .Where(o => o.Status == 2 && o.CheckoutAt.HasValue && o.CheckoutAt >= yesterdayStart && o.CheckoutAt < todayStart)
                 .AsNoTracking()
-                .SumAsync(o => (decimal?)o.FinalAmount) ?? 0m;
+                .Select(o => o.FinalAmount)
+                .ToListAsync();
+            var yesterdayRevenue = yesterdayOrders.Sum();
 
             // 3. Doanh thu tháng này
-            var monthRevenue = await _db.Orders
+            var monthOrders = await _db.Orders
                 .Where(o => o.Status == 2 && o.CheckoutAt.HasValue && o.CheckoutAt >= monthStart && o.CheckoutAt < todayEnd)
                 .AsNoTracking()
-                .SumAsync(o => (decimal?)o.FinalAmount) ?? 0m;
+                .Select(o => o.FinalAmount)
+                .ToListAsync();
+            var monthRevenue = monthOrders.Sum();
 
             // 4. Đơn đang phục vụ (Status 0=Chưa thanh toán, 1=Đã in bill nhưng chưa thu tiền)
             var activeOrdersCount = await _db.Orders.CountAsync(o => o.Status == 0 || o.Status == 1);
@@ -732,12 +736,13 @@ public class DashboardService : IDashboardService
                 HourlyRevenue    = hourlyRevenue,
                 RecentOrders     = recentOrders,
                 RevenueByStaff   = revenueByStaff,
-                Message          = $"Now: {now:yyyy-MM-dd HH:mm:ss}, TodayStart: {todayStart:yyyy-MM-dd HH:mm:ss}, OrdersCount: {todayPaid.Count}, TotalAllOrders: {await _db.Orders.CountAsync()}, TotalStatus2: {await _db.Orders.CountAsync(o => o.Status == 2)}"
+                Message          = "" // Clear message when successful
             };
         }
         catch (Exception ex)
         {
-            return new DashboardDto { Message = "CRASH: " + ex.Message + " | " + ex.StackTrace };
+            // Trả về DTO trống kèm thông báo lỗi thay vì crash 500
+            return new DashboardDto { Message = "Dashboard Error: " + ex.Message };
         }
     }
 }
