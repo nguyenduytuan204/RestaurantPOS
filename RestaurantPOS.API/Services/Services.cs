@@ -670,6 +670,7 @@ public class DashboardService : IDashboardService
         var activeOrders = await _db.Orders.CountAsync(o => o.Status == 0 || o.Status == 1);
 
         var hourlyRevenue = todayPaid
+            .Where(o => o.CheckoutAt.HasValue) // Kiểm tra an toàn để tránh crash
             .GroupBy(o => o.CheckoutAt!.Value.Hour)
             .Select(g => new HourlyRevenueDto
             {
