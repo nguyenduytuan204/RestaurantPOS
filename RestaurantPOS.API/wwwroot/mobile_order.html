@@ -136,6 +136,8 @@
     /* Custom Transitions */
     .fade-up { animation: fadeUp 0.4s ease both; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -326,10 +328,15 @@
       const filterSection = document.getElementById('filterSection');
       if (filterSection) filterSection.style.display = tabId === 'tab-tables' ? 'block' : 'none';
 
-      // Hide footer on Tables tab, show on others
+      // Robust hiding on Tables tab
       const cartFooter = document.getElementById('cartActionState');
       if (cartFooter) {
-        cartFooter.style.display = (tabId === 'tab-tables') ? 'none' : 'flex';
+        if (tabId === 'tab-tables') {
+          cartFooter.classList.add('hidden');
+        } else {
+          cartFooter.classList.remove('hidden');
+          cartFooter.style.display = 'flex'; // Ensure it's flex when showing
+        }
       }
       
       window.scrollTo(0,0);
