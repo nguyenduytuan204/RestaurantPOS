@@ -250,10 +250,6 @@
         </div>
       </div>
     <div class="cart-footer-bottom">
-      <label class="checkbox-item">
-        <input type="checkbox" id="autoSwitchMenu" checked>
-        Mở thực đơn khi chọn bàn
-      </label>
       <div style="font-size:12px; font-weight:700; color:var(--brand);" id="activeTableNameFooter"></div>
     </div>
   </div>
@@ -503,10 +499,8 @@
       renderProducts();
       syncFooterVisibility();
       
-      const autoSwitch = document.getElementById('autoSwitchMenu');
-      if (autoSwitch && autoSwitch.checked) {
-        switchTab('tab-menu');
-      }
+      // Tự động chuyển qua tab Thực đơn khi chọn bàn
+      switchTab('tab-menu');
     }
 
     function clearSelectedTable() {
