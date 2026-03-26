@@ -249,9 +249,6 @@
           <button class="btn btn-brand" style="width:100%; height:45px; background: #b01267; color:white; border:none; border-radius:8px; font-weight:700;" onclick="submitOrder()">Gửi món</button>
         </div>
       </div>
-    <div class="cart-footer-bottom">
-      <div style="font-size:12px; font-weight:700; color:var(--brand);" id="activeTableNameFooter"></div>
-    </div>
   </div>
 
   <div class="loader" id="loader">
@@ -325,7 +322,7 @@
       // 1. Hide on Tables Tab ALWAYS
       // 2. Hide on Menu Tab if Total Price is 0
       // 3. Show otherwise
-      const shouldHide = (tabId === 'tab-tables') || (tabId === 'tab-menu' && totalPrice <= 0);
+      const shouldHide = (tabId === 'tab-tables') || (totalPrice <= 0);
 
       if (shouldHide) {
         cartFooter.style.setProperty('display', 'none', 'important');
