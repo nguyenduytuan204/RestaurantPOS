@@ -735,10 +735,9 @@ public class DashboardService : IDashboardService
                 Message          = $"Now: {now:yyyy-MM-dd HH:mm:ss}, TodayStart: {todayStart:yyyy-MM-dd HH:mm:ss}, OrdersCount: {todayPaid.Count}, TotalAllOrders: {await _db.Orders.CountAsync()}, TotalStatus2: {await _db.Orders.CountAsync(o => o.Status == 2)}"
             };
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Trả về DTO trống thay vì crash 500
-            return new DashboardDto();
+            return new DashboardDto { Message = "CRASH: " + ex.Message + " | " + ex.StackTrace };
         }
     }
 }
