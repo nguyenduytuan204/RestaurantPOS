@@ -283,7 +283,8 @@
       selectedCategory: 'All',
       statusFilter: 'all', // 'all', 'busy', 'empty'
       cart: {},
-      existingOrderItems: []
+      existingOrderItems: [],
+      currentTab: 'tab-tables'
     };
 
     // 2. Bảo vệ trang
@@ -309,6 +310,26 @@
       setTimeout(() => el.classList.remove('show'), 3000);
     }
 
+    function syncFooterVisibility() {
+      const tabId = state.currentTab;
+      const cartFooter = document.getElementById('cartActionState');
+      if (!cartFooter) return;
+
+      const hasNew = Object.keys(state.cart).length > 0;
+      const hasOld = state.existingOrderItems.length > 0;
+      const totalItems = hasNew || hasOld;
+
+      // Rule: Hide on tables tab OR (on menu tab AND nothing selected)
+      const shouldHide = (tabId === 'tab-tables') || (tabId === 'tab-menu' && !totalItems);
+
+      if (shouldHide) {
+        cartFooter.classList.add('hidden');
+      } else {
+        cartFooter.classList.remove('hidden');
+        cartFooter.style.display = 'flex';
+      }
+    }
+
     // --- NAVIGATION ---
     function switchTab(tabId) {
       if ((tabId === 'tab-menu' || tabId === 'tab-cart') && !state.selectedTable) {
@@ -318,6 +339,7 @@
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
       
+      state.currentTab = tabId;
       const targetTab = document.getElementById(tabId);
       if (targetTab) targetTab.classList.add('active');
 
@@ -328,16 +350,7 @@
       const filterSection = document.getElementById('filterSection');
       if (filterSection) filterSection.style.display = tabId === 'tab-tables' ? 'block' : 'none';
 
-      // Robust hiding on Tables tab
-      const cartFooter = document.getElementById('cartActionState');
-      if (cartFooter) {
-        if (tabId === 'tab-tables') {
-          cartFooter.classList.add('hidden');
-        } else {
-          cartFooter.classList.remove('hidden');
-          cartFooter.style.display = 'flex'; // Ensure it's flex when showing
-        }
-      }
+      syncFooterVisibility();
       
       window.scrollTo(0,0);
       
@@ -480,6 +493,7 @@
       }
       renderTables();
       renderProducts();
+      syncFooterVisibility();
       
       const autoSwitch = document.getElementById('autoSwitchMenu');
       if (autoSwitch && autoSwitch.checked) {
@@ -562,6 +576,7 @@
       else state.cart[productId] = newQty;
       updateCartBadge();
       renderProducts();
+      syncFooterVisibility();
     }
 
     function updateCartBadge() {
