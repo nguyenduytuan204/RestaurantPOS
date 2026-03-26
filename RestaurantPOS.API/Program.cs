@@ -23,7 +23,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // ── 2. DATABASE (Entity Framework Core) ──────────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=restaurant.db"));
 
 // ── 3. REPOSITORIES ───────────────────────────────────────
 builder.Services.AddScoped<IOrderRepository,   OrderRepository>();
@@ -121,6 +121,7 @@ app.MapControllers();
     {
         var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.EnsureCreated();
         await auth.SeedAdminAsync();
 
         // FORCE FIX FONT: Xóa và nạp lại dữ liệu chuẩn C# Unicode
@@ -137,14 +138,10 @@ app.MapControllers();
             db.Database.ExecuteSqlRaw("DELETE FROM Categories");
             db.Database.ExecuteSqlRaw("DELETE FROM PaymentMethods");
 
-            // RESET IDENTITY SEEDS TO 0
-            db.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('OrderDetails', RESEED, 0)");
-            db.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('Orders', RESEED, 0)");
-            db.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('Products', RESEED, 0)");
-            db.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('DiningTables', RESEED, 0)");
-            db.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('Areas', RESEED, 0)");
-            db.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('Categories', RESEED, 0)");
-            db.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('PaymentMethods', RESEED, 0)");
+            // RESET IDENTITY SEEDS TO 0 (SQLite version)
+            try {
+                db.Database.ExecuteSqlRaw("DELETE FROM sqlite_sequence WHERE name IN ('OrderDetails', 'Orders', 'Products', 'DiningTables', 'Areas', 'Categories', 'PaymentMethods')");
+            } catch { /* sqlite_sequence might not exist yet */ }
             Console.WriteLine("DEBUG: DELETED OLD DATA.");
             
             // 1. Payment Methods

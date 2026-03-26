@@ -35,20 +35,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<OrderDetail>() .ToTable("OrderDetails");
 
         // Kiểu decimal cho VND
-        modelBuilder.Entity<Product>()
-            .Property(p => p.Price).HasColumnType("decimal(18,0)");
-        modelBuilder.Entity<Order>()
-            .Property(o => o.TotalAmount).HasColumnType("decimal(18,0)");
-        modelBuilder.Entity<Order>()
-            .Property(o => o.Discount).HasColumnType("decimal(18,0)");
-        modelBuilder.Entity<Order>()
-            .Property(o => o.FinalAmount).HasColumnType("decimal(18,0)");
-        modelBuilder.Entity<Order>()
-            .Property(o => o.CustomerPaid).HasColumnType("decimal(18,0)");
-        modelBuilder.Entity<Order>()
-            .Property(o => o.ChangeAmount).HasColumnType("decimal(18,0)");
-        modelBuilder.Entity<OrderDetail>()
-            .Property(od => od.UnitPrice).HasColumnType("decimal(18,0)");
 
         // SubTotal tính trong C#, không lưu DB
         modelBuilder.Entity<OrderDetail>()
