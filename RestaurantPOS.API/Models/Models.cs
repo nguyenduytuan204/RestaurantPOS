@@ -58,7 +58,7 @@ namespace RestaurantPOS.API.Models
         public decimal? CustomerPaid { get; set; }
         public decimal? ChangeAmount { get; set; }
         public string? Note { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
         public DateTime? CheckoutAt { get; set; }
         public DiningTable DiningTable { get; set; } = null!;
         public User? User { get; set; }
@@ -95,6 +95,6 @@ namespace RestaurantPOS.API.Models
         public string FullName { get; set; } = string.Empty;
         public byte Role { get; set; } = 0;
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
     }
 }

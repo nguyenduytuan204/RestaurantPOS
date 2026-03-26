@@ -55,7 +55,7 @@ public class TableService : ITableService
         // Map theo TableID
         var activeOrders = activeOrderList.ToDictionary(o => o.TableID);
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow.AddHours(7);
 
         return areas.Select(a => new AreaWithTablesDto
         {
@@ -355,7 +355,7 @@ public class OrderService : IOrderService
         order.ChangeAmount = dto.CustomerPaid.HasValue
             ? dto.CustomerPaid.Value - order.FinalAmount : null;
         order.Status = 2;          // Đã thanh toán
-        order.CheckoutAt = DateTime.Now;
+        order.CheckoutAt = DateTime.UtcNow.AddHours(7);
 
         // Giải phóng bàn → Trống
         order.DiningTable.Status = 0;
@@ -645,7 +645,7 @@ public class DashboardService : IDashboardService
     {
         try
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow.AddHours(7);
             var todayStart = now.Date;
             var todayEnd   = todayStart.AddDays(1);
             var yesterdayStart = todayStart.AddDays(-1);

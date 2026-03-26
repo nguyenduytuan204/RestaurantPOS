@@ -95,7 +95,7 @@ public class VnPayController : ControllerBase
         if (order != null && order.Status <= 1)
         {
             order.Status = 2; // Paid
-            order.CheckoutAt = DateTime.Now;
+            order.CheckoutAt = DateTime.UtcNow.AddHours(7);
             order.Note = (order.Note ?? "") + " [Paid via " + method + "]";
             
             // Tìm hoặc tạo PaymentMethod VNPay (Giả định ID = 3 cho thực tế, ở đây ta gán tạm)

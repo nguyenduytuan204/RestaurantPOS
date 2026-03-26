@@ -28,7 +28,7 @@ public class VnPayService : IVnPayService
         var vnp_BaseUrl = _config["VnPay:BaseUrl"] ?? "";
         var vnp_ReturnUrl = _config["VnPay:ReturnUrl"] ?? "";
 
-        var vnp_CreateDate = DateTime.Now.ToString("yyyyMMddHHmmss");
+        var vnp_CreateDate = DateTime.UtcNow.AddHours(7).ToString("yyyyMMddHHmmss");
         var vnp_TxnRef = order.OrderID.ToString();
         var vnp_OrderInfo = $"Thanh toan don hang {order.OrderID}";
         var vnp_Amount = ((long)(order.FinalAmount * 100)).ToString(); // VNPay uses cents (x100)
