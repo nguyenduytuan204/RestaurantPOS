@@ -315,22 +315,10 @@
       const cartFooter = document.getElementById('cartActionState');
       if (!cartFooter) return;
 
-      const hasNew = Object.keys(state.cart).length > 0;
-      const hasOld = state.existingOrderItems.length > 0;
-      
-      let totalPrice = 0;
-      for (const [pId, qty] of Object.entries(state.cart)) {
-        const prod = state.products.find(p => (p.productID || p.productId || p.ProductID) == pId);
-        if (prod) totalPrice += (prod.price || prod.Price || 0) * qty;
-      }
-      state.existingOrderItems.forEach(item => {
-        totalPrice += (item.quantity || item.Quantity || 0) * (item.unitPrice || item.UnitPrice || item.price || 0);
-      });
+      // Rule: Only show footer on the Cart tab
+      const shouldShow = (tabId === 'tab-cart');
 
-      // Rule: Hide on tables tab OR (on menu tab AND total price is 0)
-      const shouldHide = (tabId === 'tab-tables') || (tabId === 'tab-menu' && totalPrice === 0);
-
-      if (shouldHide) {
+      if (!shouldShow) {
         cartFooter.classList.add('hidden');
       } else {
         cartFooter.classList.remove('hidden');
