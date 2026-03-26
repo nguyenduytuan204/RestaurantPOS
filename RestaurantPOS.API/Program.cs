@@ -124,25 +124,27 @@ app.MapControllers();
         db.Database.EnsureCreated();
         await auth.SeedAdminAsync();
 
-        // FORCE FIX FONT: Xóa và nạp lại dữ liệu chuẩn C# Unicode
-        bool needForceFix = false; // Set to false to preserve production data
-        if (needForceFix)
-        {
-            Console.WriteLine("DEBUG: ENTERING FORCE FIX SEEDING...");
-            // Xóa dữ liệu cũ (Chú ý thứ tự khóa ngoại)
-             db.Database.ExecuteSqlRaw("DELETE FROM OrderDetails");
-            db.Database.ExecuteSqlRaw("DELETE FROM Orders");
-            db.Database.ExecuteSqlRaw("DELETE FROM Products");
-            db.Database.ExecuteSqlRaw("DELETE FROM DiningTables");
-            db.Database.ExecuteSqlRaw("DELETE FROM Areas");
-            db.Database.ExecuteSqlRaw("DELETE FROM Categories");
-            db.Database.ExecuteSqlRaw("DELETE FROM PaymentMethods");
+        // Kiểm tra xem đã có dữ liệu chưa. Nếu chưa có thì mới nạp (Tránh mất bàn đã có)
+        bool dbIsEmpty = !db.Areas.Any();
+        bool needForceFix = false; 
 
-            // RESET IDENTITY SEEDS TO 0 (SQLite version)
-            try {
-                db.Database.ExecuteSqlRaw("DELETE FROM sqlite_sequence WHERE name IN ('OrderDetails', 'Orders', 'Products', 'DiningTables', 'Areas', 'Categories', 'PaymentMethods')");
-            } catch { /* sqlite_sequence might not exist yet */ }
-            Console.WriteLine("DEBUG: DELETED OLD DATA.");
+        if (needForceFix || dbIsEmpty)
+        {
+            if (needForceFix) {
+                Console.WriteLine("DEBUG: FORCE DELETING OLD DATA...");
+                db.Database.ExecuteSqlRaw("DELETE FROM OrderDetails");
+                db.Database.ExecuteSqlRaw("DELETE FROM Orders");
+                db.Database.ExecuteSqlRaw("DELETE FROM Products");
+                db.Database.ExecuteSqlRaw("DELETE FROM DiningTables");
+                db.Database.ExecuteSqlRaw("DELETE FROM Areas");
+                db.Database.ExecuteSqlRaw("DELETE FROM Categories");
+                db.Database.ExecuteSqlRaw("DELETE FROM PaymentMethods");
+                try {
+                    db.Database.ExecuteSqlRaw("DELETE FROM sqlite_sequence WHERE name IN ('OrderDetails', 'Orders', 'Products', 'DiningTables', 'Areas', 'Categories', 'PaymentMethods')");
+                } catch {}
+            }
+            
+            Console.WriteLine("DEBUG: SEEDING INITIAL DATA...");
             
             // 1. Payment Methods
             db.PaymentMethods.AddRange(
