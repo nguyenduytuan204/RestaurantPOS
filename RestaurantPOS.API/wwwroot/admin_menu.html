@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản lý thực đơn — POS Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f5f4f0;
+  --surface:   #ffffff;
+  --card:      #faf9f6;
+  --border:    #e4e2db;
+  --border-md: #d0cec5;
+  --accent:    #c84b2f;
+  --accent-lt: #fdf0ed;
+  --accent-md: #f0c4bb;
+  --text:      #1a1916;
+  --text-md:   #4a4842;
+  --text-lt:   #8a8880;
+  --green:     #2d7a4f;
+  --green-lt:  #edf7f2;
+  --amber:     #a05a10;
+  --amber-lt:  #fef6ed;
+  --radius:    8px;
+  --font:      'Instrument Sans', sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.nav { display: flex; gap: 4px; margin-left: 20px; }
+.nav a {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-lt);
+  text-decoration: none;
+  transition: all .15s;
+}
+.nav a:hover { background: var(--bg); color: var(--text); }
+.nav a.active { background: var(--accent-lt); color: var(--accent); }
+
+/* Tabs Navigation */
+.admin-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 12px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.admin-tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-lt);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.admin-tab:hover { background: var(--bg); color: var(--text); }
+.admin-tab.active { background: var(--accent); color: #fff; }
+
+.section-page { display: none; }
+.section-page.active { display: block; }
+
+.area-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 20px 28px;
+}
+.area-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s;
+}
+.area-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-color: var(--border-md); }
+.area-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.area-card-name { font-weight: 700; font-size: 16px; color: var(--text); }
+.area-card-desc { font-size: 13px; color: var(--text-lt); }
+.area-card-info { font-size: 12px; color: var(--text-md); display: flex; gap: 12px; }
+
+.header-left { display: flex; align-items: center; gap: 16px; }
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-lt);
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  transition: all .15s;
+}
+.back-btn:hover { color: var(--text); border-color: var(--border-md); }
+.header-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.3px;
+}
+.header-sub {
+  font-size: 12px;
+  color: var(--text-lt);
+  font-weight: 400;
+}
+.btn-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-add:hover { background: #b03e24; }
+
+/* ── TOOLBAR ─────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px 0;
+  flex-wrap: wrap;
+}
+.search-wrap {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+.search-icon {
+  position: absolute;
+  left: 11px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-lt);
+  font-size: 14px;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+.search-input::placeholder { color: var(--text-lt); }
+.search-input:focus { border-color: var(--border-md); }
+
+.filter-select {
+  padding: 9px 32px 9px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a8880' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.filter-select:focus { border-color: var(--border-md); }
+
+.stats-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 28px;
+}
+.stat-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-md);
+}
+.stat-pill.active-filter { background: var(--accent-lt); border-color: var(--accent-md); color: var(--accent); }
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.table-wrap {
+  padding: 0 28px 32px;
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.data-table thead tr {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.data-table th {
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-lt);
+  text-align: left;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.data-table th:hover { color: var(--text-md); }
+.data-table th.sort-asc::after  { content: ' ↑'; }
+.data-table th.sort-desc::after { content: ' ↓'; }
+
+.data-table td {
+  padding: 13px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr {
+  transition: background .12s;
+  animation: rowIn .2s ease both;
+}
+.data-table tbody tr:hover { background: var(--card); }
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.product-cell { display: flex; align-items: center; gap: 12px; }
+.product-emoji {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.product-name { font-weight: 600; font-size: 13px; }
+.product-desc { font-size: 11px; color: var(--text-lt); margin-top: 2px; }
+
+.price-cell {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cat-1 { background: #fff3e8; color: #b85c10; border: 1px solid #fad9b8; }
+.cat-2 { background: #e8f4ff; color: #1a6ab5; border: 1px solid #b8d8fa; }
+.cat-3 { background: #edf7f2; color: #2d7a4f; border: 1px solid #b3e0c8; }
+.cat-0 { background: var(--bg); color: var(--text-lt); border: 1px solid var(--border); }
+
+/* Toggle switch */
+.toggle {
+  position: relative;
+  width: 36px; height: 20px;
+  display: inline-block;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border-md);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  top: 3px; left: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--green); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+/* Action buttons */
+.actions { display: flex; gap: 4px; }
+.action-btn {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+  color: var(--text-lt);
+}
+.action-btn:hover { background: var(--card); color: var(--text); border-color: var(--border-md); }
+.action-btn.delete:hover { background: #fdf0ed; color: var(--accent); border-color: var(--accent-md); }
+
+.empty-state {
+  text-align: center;
+  padding: 56px 0;
+  color: var(--text-lt);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; }
+.empty-sub  { font-size: 12px; margin-top: 4px; }
+
+/* ── SLIDE-IN DRAWER (Add/Edit) ──────────────────────────── */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,25,22,.45);
+  z-index: 50;
+}
+.drawer-overlay.open { display: block; }
+
+.drawer {
+  position: fixed;
+  top: 0; right: 0;
+  width: 420px;
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  z-index: 51;
+}
+.drawer.open { transform: translateX(0); }
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.drawer-title { font-size: 15px; font-weight: 700; }
+.drawer-close {
+  width: 28px; height: 28px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-lt);
+  transition: all .12s;
+}
+.drawer-close:hover { color: var(--text); }
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* Form fields */
+.field { margin-bottom: 18px; }
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-lt);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 6px;
+}
+.field-input, .field-select, .field-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+.field-input:focus, .field-select:focus, .field-textarea:focus {
+  border-color: var(--border-md);
+  background: var(--surface);
+}
+.field-input.error, .field-select.error { border-color: var(--accent); }
+.field-error { font-size: 11px; color: var(--accent); margin-top: 4px; display: none; }
+.field-error.show { display: block; }
+.field-textarea { resize: vertical; min-height: 80px; }
+.field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a8880' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.field-row { display: flex; gap: 12px; }
+.field-row .field { flex: 1; }
+
+/* Price input with prefix */
+.price-wrap { position: relative; }
+.price-prefix {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--text-lt);
+  font-family: var(--mono);
+  pointer-events: none;
+}
+.price-wrap .field-input { padding-left: 28px; font-family: var(--mono); }
+
+/* Available toggle in form */
+.field-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.field-toggle-label { font-size: 13px; font-weight: 500; }
+.field-toggle-sub   { font-size: 11px; color: var(--text-lt); margin-top: 2px; }
+
+/* Image preview */
+.img-preview {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: var(--bg);
+  border: 1.5px dashed var(--border-md);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-lt);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.img-preview img { width: 100%; height: 100%; object-fit: cover; }
+.img-preview.has-img { border-style: solid; border-color: var(--border); }
+
+.drawer-footer {
+  border-top: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.btn-cancel {
+  flex: 1;
+  padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-md);
+  cursor: pointer;
+  transition: all .12s;
+}
+.btn-cancel:hover { border-color: var(--border-md); color: var(--text); }
+.btn-save {
+  flex: 2;
+  padding: 10px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: background .12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-save:hover { background: #b03e24; }
+.btn-save:disabled { background: var(--border-md); cursor: not-allowed; }
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: none;
+}
+.btn-save.loading .spinner { display: block; }
+.btn-save.loading .btn-save-text { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── DELETE CONFIRM MODAL ────────────────────────────────── */
+.confirm-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,25,22,.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-modal.open { display: flex; }
+.confirm-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 360px;
+  animation: popIn .18s ease;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.confirm-icon { font-size: 32px; margin-bottom: 12px; }
+.confirm-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.confirm-msg   { font-size: 13px; color: var(--text-md); margin-bottom: 20px; line-height: 1.5; }
+.confirm-btns  { display: flex; gap: 8px; }
+.btn-confirm-cancel {
+  flex: 1; padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-md);
+  cursor: pointer;
+  transition: all .12s;
+}
+.btn-confirm-cancel:hover { color: var(--text); }
+.btn-confirm-delete {
+  flex: 1; padding: 10px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: background .12s;
+}
+.btn-confirm-delete:hover { background: #b03e24; }
+
+/* ── TOAST ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--text);
+  color: #fff;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all .22s ease;
+  pointer-events: none;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success::before { content: '✓'; color: #3ecf8e; font-weight: 700; }
+.toast.error::before   { content: '✕'; color: #f08080; font-weight: 700; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left" style="display: flex; align-items: center; gap: 16px;">
+    <a href="dashboard" class="back-btn" title="Quay lại">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    <a href="dashboard" style="text-decoration: none; display: flex; align-items: center;">
+      <div class="header-title" style="font-size: 18px; margin-right: 12px; color: var(--text);">
+        <i class="fa-solid fa-utensils" style="margin-right:8px; color: var(--accent);"></i> Nhà hàng POS
+      </div>
+    </a>
+  </div>
+  <div style="display: flex; gap: 12px; align-items: center;">
+    <button class="btn-add" onclick="openDrawer()">
+      <i class="fa-solid fa-plus"></i> Thêm món mới
+    </button>
+    <button class="btn-cancel" onclick="Auth.logout()" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+      <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+    </button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="admin-tabs">
+  <div class="admin-tab active" id="tab-menu" onclick="switchSection('menu')"><i class="fa-solid fa-utensils"></i> Thực đơn</div>
+  <div class="admin-tab" id="tab-category" onclick="switchSection('category')"><i class="fa-solid fa-tags"></i> Danh mục</div>
+  <div class="admin-tab" id="tab-area" onclick="switchSection('area')"><i class="fa-solid fa-layer-group"></i> Khu vực & Bàn</div>
+</div>
+
+<div id="section-menu" class="section-page active">
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+    <input class="search-input" placeholder="Tìm tên món..." id="searchInput"
+           oninput="applyFilters()">
+  </div>
+  <select class="filter-select" id="catFilter" onchange="applyFilters()">
+    <option value="">Tất cả danh mục</option>
+  </select>
+  <select class="filter-select" id="availFilter" onchange="applyFilters()">
+    <option value="">Tất cả trạng thái</option>
+    <option value="1">Còn phục vụ</option>
+    <option value="0">Tạm ngưng</option>
+  </select>
+</div>
+
+<!-- STATS -->
+<div class="stats-row" id="statsRow"></div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th onclick="sortBy('productName')">Tên món</th>
+        <th onclick="sortBy('categoryName')">Danh mục</th>
+        <th onclick="sortBy('price')">Đơn giá</th>
+        <th>Trạng thái</th>
+        <th style="text-align:right">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+</div>
+
+<!-- SECTION: CATEGORIES -->
+<div id="section-category" class="section-page">
+  <div class="toolbar">
+    <div class="header-title">Danh sách danh mục</div>
+    <div style="flex:1"></div>
+    <button class="btn-add" onclick="openCategoryDrawer()">
+      <i class="fa-solid fa-plus"></i> Thêm danh mục
+    </button>
+  </div>
+  <div class="table-wrap" style="margin-top: 16px;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tên danh mục</th>
+          <th>Thứ tự</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="categoryTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION: AREAS -->
+<div id="section-area" class="section-page">
+  <div class="toolbar">
+    <div class="header-title">Danh sách khu vực & bàn</div>
+    <div style="flex:1"></div>
+    <button class="btn-add" onclick="openAreaDrawer()">
+      <i class="fa-solid fa-plus"></i> Thêm khu vực
+    </button>
+  </div>
+  <div class="table-wrap" style="margin-top: 16px;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tên khu vực</th>
+          <th>Thứ tự</th>
+          <th>Số lượng bàn</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="areaTableBody"></tbody>
+    </table>
+  </div>
+</div>
+  </div>
+</div>
+
+<!-- DRAWER: AREA -->
+<div class="drawer" id="areaDrawer">
+  <div class="drawer-header">
+    <div class="drawer-title" id="areaDrawerTitle">Thêm khu vực mới</div>
+    <button class="drawer-close" onclick="closeAreaDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field">
+      <label class="field-label">Tên khu vực *</label>
+      <input class="field-input" id="aeName" placeholder="VD: Khu A">
+      <div class="field-error" id="errAeName">Vui lòng nhập tên khu vực</div>
+    </div>
+    <div class="field">
+      <label class="field-label">Thứ tự hiển thị</label>
+      <input class="field-input" id="aeSort" type="number" value="1">
+    </div>
+    <div class="field">
+      <label class="field-label">Mô tả</label>
+      <textarea class="field-textarea" id="aeDesc" placeholder="Thông tin thêm về khu vực..."></textarea>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn-cancel" onclick="closeAreaDrawer()">Hủy</button>
+    <button class="btn-save" id="btnSaveArea" onclick="saveArea()">
+      <div class="spinner"></div>
+      <span class="btn-save-text">Lưu khu vực</span>
+    </button>
+  </div>
+</div>
+
+<!-- DRAWER: CATEGORY -->
+<div class="drawer" id="categoryDrawer">
+  <div class="drawer-header">
+    <div class="drawer-title" id="categoryDrawerTitle">Thêm danh mục mới</div>
+    <button class="drawer-close" onclick="closeCategoryDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field">
+      <label class="field-label">Tên danh mục *</label>
+      <input class="field-input" id="catName" placeholder="VD: Đồ uống">
+      <div class="field-error" id="errCatName">Vui lòng nhập tên danh mục</div>
+    </div>
+    <div class="field">
+      <label class="field-label">Thứ tự hiển thị</label>
+      <input class="field-input" id="catSort" type="number" value="1">
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn-cancel" onclick="closeCategoryDrawer()">Hủy</button>
+    <button class="btn-save" id="btnSaveCategory" onclick="saveCategory()">
+      <div class="spinner"></div>
+      <span class="btn-save-text">Lưu danh mục</span>
+    </button>
+  </div>
+</div>
+
+<!-- DRAWER: TABLES LIST (MANAGEMENT) -->
+<div class="drawer" id="tablesListDrawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Quản lý bàn: <span id="currentAreaName">...</span></div>
+    <button class="drawer-close" onclick="closeTablesListDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" style="padding:0">
+    <div style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--card);">
+      <div style="font-size: 13px; font-weight: 600;">Danh sách bàn</div>
+      <button class="btn-add" style="padding: 6px 12px; font-size: 12px;" onclick="openTableDrawer()">
+        <i class="fa-solid fa-plus"></i> Thêm bàn
+      </button>
+    </div>
+    <div id="tablesListContent" style="padding: 16px;">
+      <!-- Table rows here -->
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER: TABLE EDIT/ADD -->
+<div class="drawer" id="tableDrawer" style="z-index: 60;">
+  <div class="drawer-header">
+    <div class="drawer-title" id="tableDrawerTitle">Thêm bàn mới</div>
+    <button class="drawer-close" onclick="closeTableDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field">
+      <label class="field-label">Tên bàn *</label>
+      <input class="field-input" id="tableNameInput" placeholder="VD: Bàn 01">
+      <div class="field-error" id="errTableName">Vui lòng nhập tên bàn</div>
+    </div>
+    <div class="field">
+      <label class="field-label">Sức chứa (người)</label>
+      <input class="field-input" id="tableCapacity" type="number" value="4">
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn-cancel" onclick="closeTableDrawer()">Hủy</button>
+    <button class="btn-save" id="btnSaveTable" onclick="saveTable()">
+      <div class="spinner"></div>
+      <span class="btn-save-text">Lưu bàn</span>
+    </button>
+  </div>
+</div>
+
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- DRAWER: Add / Edit -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title" id="drawerTitle">Thêm món mới</div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+
+    <div class="field">
+      <label class="field-label">Tên món *</label>
+      <input class="field-input" id="fName" placeholder="VD: Cơm sườn nướng">
+      <div class="field-error" id="errName">Vui lòng nhập tên món</div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Danh mục *</label>
+        <select class="field-select" id="fCategory">
+          <option value="">Chọn danh mục</option>
+        </select>
+        <div class="field-error" id="errCat">Vui lòng chọn danh mục</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Đơn giá *</label>
+        <div class="price-wrap">
+          <span class="price-prefix">đ</span>
+          <input class="field-input" id="fPrice" type="number" min="0" placeholder="0">
+        </div>
+        <div class="field-error" id="errPrice">Giá phải lớn hơn 0</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Mô tả ngắn</label>
+      <textarea class="field-textarea" id="fDesc" placeholder="Ghi chú nguyên liệu, khẩu phần..."></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">URL hình ảnh</label>
+      <input class="field-input" id="fImage" placeholder="https://..." oninput="previewImg(this.value)">
+      <div class="img-preview" id="imgPreview">
+        <span>Nhập URL để xem trước ảnh</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-toggle-row">
+        <div>
+          <div class="field-toggle-label">Còn phục vụ</div>
+          <div class="field-toggle-sub">Hiển thị món này trên thực đơn</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="fAvailable" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+  </div>
+  <div class="drawer-footer">
+    <button class="btn-cancel" onclick="closeDrawer()">Hủy</button>
+    <button class="btn-save" id="btnSave" onclick="saveProduct()">
+      <div class="spinner"></div>
+      <span class="btn-save-text">Lưu món</span>
+    </button>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon"><i class="fa-solid fa-trash-can" style="color:var(--accent)"></i></div>
+    <div class="confirm-title">Xóa món này?</div>
+    <div class="confirm-msg" id="confirmMsg">Món sẽ bị ẩn khỏi thực đơn. Bạn có thể khôi phục sau bằng cách chỉnh sửa.</div>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" onclick="closeConfirm()">Hủy</button>
+      <button class="btn-confirm-delete" onclick="confirmDelete()">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+
+// ── STATE ─────────────────────────────────────────────────
+let state = {
+  products:   [],
+  categories: [],
+  filtered:   [],
+  editId:     null,     // null = thêm mới, number = đang sửa
+  deleteId:   null,
+  sortKey:    'productName',
+  sortAsc:    true,
+  areas:      [],
+  editAreaId: null,
+  deleteAreaId: null,
+  
+  // Category management
+  editCategoryId: null,
+  deleteCategoryId: null,
+
+  // Table management
+  currentAreaId: null,
+  tables: [],
+  editTableId: null,
+  deleteTableId: null,
+};
+
+// ── MOCK DATA ─────────────────────────────────────────────
+const MOCK_CATS = [
+  { categoryID:1, categoryName:'Đồ ăn',       sortOrder:1 },
+  { categoryID:2, categoryName:'Đồ uống',     sortOrder:2 },
+  { categoryID:3, categoryName:'Tráng miệng', sortOrder:3 },
+];
+const MOCK_PRODUCTS = [
+  { productID:1, categoryID:1, categoryName:'Đồ ăn',   productName:'Cơm sườn nướng',  price:65000,  isAvailable:true,  description:'Cơm trắng + sườn ướp sả' },
+  { productID:2, categoryID:1, categoryName:'Đồ ăn',   productName:'Bún bò Huế',       price:55000,  isAvailable:true,  description:'Đặc sản miền Trung' },
+  { productID:3, categoryID:1, categoryName:'Đồ ăn',   productName:'Phở bò tái chín', price:60000,  isAvailable:true,  description:'' },
+  { productID:4, categoryID:1, categoryName:'Đồ ăn',   productName:'Gà nướng muối ớt',price:120000, isAvailable:true,  description:'Nửa con gà' },
+  { productID:5, categoryID:1, categoryName:'Đồ ăn',   productName:'Lẩu thái hải sản',price:350000, isAvailable:false, description:'Phục vụ 2-4 người' },
+  { productID:6, categoryID:2, categoryName:'Đồ uống', productName:'Trà đá',           price:5000,   isAvailable:true,  description:'' },
+  { productID:7, categoryID:2, categoryName:'Đồ uống', productName:'Pepsi / 7Up',      price:20000,  isAvailable:true,  description:'Lon 330ml' },
+  { productID:8, categoryID:2, categoryName:'Đồ uống', productName:'Cà phê đen đá',   price:25000,  isAvailable:true,  description:'' },
+  { productID:9, categoryID:2, categoryName:'Đồ uống', productName:'Trà sữa trân châu',price:45000, isAvailable:true,  description:'Hân hạnh phục vụ' },
+  { productID:10,categoryID:3, categoryName:'Tráng miệng',productName:'Chè thái',     price:35000,  isAvailable:true,  description:'' },
+  { productID:11,categoryID:3, categoryName:'Tráng miệng',productName:'Kem dừa',      price:30000,  isAvailable:true,  description:'' },
+];
+const CAT_EMOJI = { 1:'<i class="fa-solid fa-bowl-food"></i>', 2:'<i class="fa-solid fa-glass-water"></i>', 3:'<i class="fa-solid fa-ice-cream"></i>' };
+const CAT_CLASS = { 1:'cat-1', 2:'cat-2', 3:'cat-3' };
+
+// ── INIT ──────────────────────────────────────────────────
+async function init() {
+  await loadCategories();
+  await loadProducts();
+  await loadAreas();
+}
+
+function switchSection(section) {
+  document.querySelectorAll('.section-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`section-${section}`).classList.add('active');
+  document.getElementById(`tab-${section}`).classList.add('active');
+}
+
+// ── AREA MANAGEMENT ──────────────────────────────────────
+async function loadAreas() {
+  try {
+    const res = await fetch(`${API}/areas/list`);
+    const areas = await res.json();
+    state.areas = areas;
+    renderAreaTable();
+  } catch (err) {
+    console.error("Failed to load areas", err);
+  }
+}
+
+function renderAreaTable() {
+  const tbody = document.getElementById('areaTableBody');
+  tbody.innerHTML = state.areas.map(a => `
+    <tr>
+      <td class="product-name">${a.areaName}</td>
+      <td>${a.sortOrder}</td>
+      <td>
+        <button class="action-btn" style="width:auto; padding:0 10px; font-size:12px; font-weight:600;" onclick="openTablesListDrawer(${a.areaID}, '${a.areaName}')">
+          <i class="fa-solid fa-table-cells"></i> ${a.diningTables ? a.diningTables.length : 0} bàn
+        </button>
+      </td>
+      <td style="text-align:right">
+        <div class="actions" style="justify-content:flex-end">
+          <button class="action-btn" onclick="openAreaDrawer(${a.areaID})"><i class="fa-solid fa-pen"></i></button>
+          <button class="action-btn delete" onclick="askDeleteArea(${a.areaID})"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openAreaDrawer(id = null) {
+  state.editAreaId = id;
+  const drawer = document.getElementById('areaDrawer');
+  const overlay = document.getElementById('drawerOverlay');
+  const title = document.getElementById('areaDrawerTitle');
+  
+  // Reset form
+  document.getElementById('aeName').value = '';
+  document.getElementById('aeSort').value = '1';
+  document.getElementById('aeDesc').value = '';
+  document.getElementById('errAeName').classList.remove('show');
+
+  if (id) {
+    title.textContent = 'Chỉnh sửa khu vực';
+    const area = state.areas.find(a => a.areaID === id);
+    if (area) {
+      document.getElementById('aeName').value = area.areaName;
+      document.getElementById('aeSort').value = area.sortOrder;
+      document.getElementById('aeDesc').value = area.description || '';
+    }
+  } else {
+    title.textContent = 'Thêm khu vực mới';
+  }
+
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+}
+
+function closeAreaDrawer() {
+  document.getElementById('areaDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+async function saveArea() {
+  const name = document.getElementById('aeName').value.trim();
+  const sort = parseInt(document.getElementById('aeSort').value) || 0;
+  const desc = document.getElementById('aeDesc').value.trim();
+
+  if (!name) {
+    document.getElementById('errAeName').classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('btnSaveArea');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const dto = { areaName: name, sortOrder: sort, description: desc };
+  const method = state.editAreaId ? 'PUT' : 'POST';
+  const url = state.editAreaId ? `${API}/areas/${state.editAreaId}` : `${API}/areas`;
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto)
+    });
+    if (!res.ok) throw new Error();
+
+    showToast(state.editAreaId ? 'Đã cập nhật khu vực' : 'Đã thêm khu vực mới', 'success');
+    closeAreaDrawer();
+    await loadAreas();
+  } catch {
+    showToast('Lỗi khi lưu khu vực', 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function askDeleteArea(id) {
+  state.deleteAreaId = id;
+  const area = state.areas.find(a => a.areaID === id);
+  document.getElementById('confirmMsg').textContent = `Bạn có chắc muốn xóa khu vực "${area.areaName}"?`;
+  document.getElementById('confirmModal').classList.add('open');
+  // Re-bind confirm button to area delete
+  document.querySelector('.btn-confirm-delete').onclick = confirmDeleteArea;
+}
+
+async function confirmDeleteArea() {
+  try {
+    const res = await fetch(`${API}/areas/${state.deleteAreaId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    showToast('Đã xóa khu vực', 'success');
+    await loadAreas();
+  } catch {
+    showToast('Lỗi khi xóa khu vực', 'error');
+  } finally {
+    closeConfirm();
+  }
+}
+
+async function loadCategories() {
+  try {
+    const res = await fetch(`${API}/products/categories`);
+    if (!res.ok) throw new Error();
+    state.categories = await res.json();
+  } catch { state.categories = [...MOCK_CATS]; }
+
+  // Render Category Table
+  renderCategoryTable();
+
+  // Điền dropdown filter
+  const catFilter = document.getElementById('catFilter');
+  catFilter.innerHTML = '<option value="">Tất cả danh mục</option>';
+  state.categories.forEach(c => {
+    catFilter.insertAdjacentHTML('beforeend',
+      `<option value="${c.categoryID}">${c.categoryName}</option>`);
+  });
+
+  // Điền dropdown trong form sản phẩm
+  const fCat = document.getElementById('fCategory');
+  fCat.innerHTML = '<option value="">Chọn danh mục</option>';
+  state.categories.forEach(c => {
+    fCat.insertAdjacentHTML('beforeend',
+        `<option value="${c.categoryID}">${c.categoryName}</option>`);
+  });
+}
+
+function renderCategoryTable() {
+  const tbody = document.getElementById('categoryTableBody');
+  tbody.innerHTML = state.categories.map(c => `
+    <tr>
+      <td class="product-name">${c.categoryName}</td>
+      <td>${c.sortOrder}</td>
+      <td style="text-align:right">
+        <div class="actions" style="justify-content:flex-end">
+          <button class="action-btn" onclick="openCategoryDrawer(${c.categoryID})"><i class="fa-solid fa-pen"></i></button>
+          <button class="action-btn delete" onclick="askDeleteCategory(${c.categoryID})"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// --- CATEGORY ACTIONS ---
+function openCategoryDrawer(id = null) {
+  state.editCategoryId = id;
+  const drawer = document.getElementById('categoryDrawer');
+  const overlay = document.getElementById('drawerOverlay');
+  const title = document.getElementById('categoryDrawerTitle');
+  
+  document.getElementById('catName').value = '';
+  document.getElementById('catSort').value = '1';
+  document.getElementById('errCatName').classList.remove('show');
+
+  if (id) {
+    title.textContent = 'Chỉnh sửa danh mục';
+    const cat = state.categories.find(c => c.categoryID === id);
+    if (cat) {
+      document.getElementById('catName').value = cat.categoryName;
+      document.getElementById('catSort').value = cat.sortOrder;
+    }
+  } else {
+    title.textContent = 'Thêm danh mục mới';
+  }
+
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+}
+
+function closeCategoryDrawer() {
+  document.getElementById('categoryDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+async function saveCategory() {
+  const name = document.getElementById('catName').value.trim();
+  const sort = parseInt(document.getElementById('catSort').value) || 0;
+
+  if (!name) {
+    document.getElementById('errCatName').classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('btnSaveCategory');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const dto = { categoryName: name, sortOrder: sort };
+  const method = state.editCategoryId ? 'PUT' : 'POST';
+  const url = state.editCategoryId ? `${API}/products/categories/${state.editCategoryId}` : `${API}/products/categories`;
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto)
+    });
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Lỗi khi lưu danh mục');
+    }
+
+    showToast(state.editCategoryId ? 'Đã cập nhật danh mục' : 'Đã thêm danh mục mới', 'success');
+    closeCategoryDrawer();
+    await loadCategories();
+  } catch (err) {
+    showToast(err.message || 'Lỗi khi lưu danh mục', 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function askDeleteCategory(id) {
+  state.deleteCategoryId = id;
+  const cat = state.categories.find(c => c.categoryID === id);
+  document.getElementById('confirmMsg').textContent = `Bạn có chắc muốn xóa danh mục "${cat.categoryName}"?`;
+  document.getElementById('confirmModal').classList.add('open');
+  document.querySelector('.btn-confirm-delete').onclick = confirmDeleteCategory;
+}
+
+async function confirmDeleteCategory() {
+  try {
+    const res = await fetch(`${API}/products/categories/${state.deleteCategoryId}`, { method: 'DELETE' });
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Lỗi khi xóa danh mục');
+    }
+    showToast('Đã xóa danh mục', 'success');
+    await loadCategories();
+  } catch (err) {
+    showToast(err.message || 'Lỗi khi xóa danh mục', 'error');
+  } finally {
+    closeConfirm();
+  }
+}
+
+// --- TABLE MANAGEMENT ACTIONS ---
+async function openTablesListDrawer(areaId, areaName) {
+    state.currentAreaId = areaId;
+    document.getElementById('currentAreaName').textContent = areaName;
+    const drawer = document.getElementById('tablesListDrawer');
+    const overlay = document.getElementById('drawerOverlay');
+    
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    await loadTables(areaId);
+}
+
+function closeTablesListDrawer() {
+    document.getElementById('tablesListDrawer').classList.remove('open');
+    document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+async function loadTables(areaId) {
+    const content = document.getElementById('tablesListContent');
+    content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-lt)">Đang tải...</div>';
+    
+    try {
+        const res = await fetch(`${API}/areas/${areaId}/tables`);
+        state.tables = await res.json();
+        renderTablesList();
+    } catch {
+        content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--accent)">Lỗi khi tải danh sách bàn.</div>';
+    }
+}
+
+function renderTablesList() {
+    const content = document.getElementById('tablesListContent');
+    if (state.tables.length === 0) {
+        content.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-lt)">Khu vực này chưa có bàn nào.</div>';
+        return;
+    }
+    
+    content.innerHTML = state.tables.map(t => `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); background:var(--surface); border-radius:8px; margin-bottom:8px;">
+            <div>
+                <div style="font-weight:600; font-size:14px;">${t.tableName}</div>
+                <div style="font-size:12px; color:var(--text-lt)">Sức chứa: ${t.capacity} người</div>
+            </div>
+            <div class="actions">
+                <button class="action-btn" onclick="openTableDrawer(${t.tableID})"><i class="fa-solid fa-pen"></i></button>
+                <button class="action-btn delete" onclick="askDeleteTable(${t.tableID})"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openTableDrawer(id = null) {
+    state.editTableId = id;
+    const drawer = document.getElementById('tableDrawer');
+    const title = document.getElementById('tableDrawerTitle');
+    
+    document.getElementById('tableNameInput').value = '';
+    document.getElementById('tableCapacity').value = '4';
+    document.getElementById('errTableName').classList.remove('show');
+
+    if (id) {
+        title.textContent = 'Chỉnh sửa bàn';
+        const table = state.tables.find(t => t.tableID === id);
+        if (table) {
+            document.getElementById('tableNameInput').value = table.tableName;
+            document.getElementById('tableCapacity').value = table.capacity;
+        }
+    } else {
+        title.textContent = 'Thêm bàn mới';
+    }
+
+    drawer.classList.add('open');
+}
+
+function closeTableDrawer() {
+    document.getElementById('tableDrawer').classList.remove('open');
+}
+
+async function saveTable() {
+    const name = document.getElementById('tableNameInput').value.trim();
+    const capacity = parseInt(document.getElementById('tableCapacity').value) || 1;
+
+    if (!name) {
+        document.getElementById('errTableName').classList.add('show');
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveTable');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const dto = { areaId: state.currentAreaId, tableName: name, capacity: capacity };
+    const method = state.editTableId ? 'PUT' : 'POST';
+    const url = state.editTableId ? `${API}/areas/tables/${state.editTableId}` : `${API}/areas/tables`;
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dto)
+        });
+        if (!res.ok) throw new Error();
+
+        showToast(state.editTableId ? 'Đã cập nhật bàn' : 'Đã thêm bàn mới', 'success');
+        closeTableDrawer();
+        await loadTables(state.currentAreaId);
+        await loadAreas(); // Để cập nhật số lượng bàn hiển thị ở bảng khu vực
+    } catch {
+        showToast('Lỗi khi lưu bàn', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }
+}
+
+function askDeleteTable(id) {
+    state.deleteTableId = id;
+    const table = state.tables.find(t => t.tableID === id);
+    document.getElementById('confirmMsg').textContent = `Bạn có chắc muốn xóa bàn "${table.tableName}" không?`;
+    document.getElementById('confirmModal').classList.add('open');
+    document.querySelector('.btn-confirm-delete').onclick = confirmDeleteTable;
+}
+
+async function confirmDeleteTable() {
+    try {
+        const res = await fetch(`${API}/areas/tables/${state.deleteTableId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error();
+        showToast('Đã xóa bàn', 'success');
+        await loadTables(state.currentAreaId);
+        await loadAreas();
+    } catch {
+        showToast('Lỗi khi xóa bàn', 'error');
+    } finally {
+        closeConfirm();
+    }
+}
+
+async function loadProducts() {
+  try {
+    const res = await fetch(`${API}/products`);
+    if (!res.ok) throw new Error();
+    state.products = await res.json();
+  } catch { state.products = [...MOCK_PRODUCTS]; }
+
+  applyFilters();
+}
+
+// ── FILTER & SORT ─────────────────────────────────────────
+function applyFilters() {
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  const cat  = document.getElementById('catFilter').value;
+  const avail= document.getElementById('availFilter').value;
+
+  state.filtered = state.products.filter(p => {
+    const matchQ    = !q    || p.productName.toLowerCase().includes(q);
+    const matchCat  = !cat  || p.categoryID == cat;
+    const matchAvail= avail === '' || (avail==='1' ? p.isAvailable : !p.isAvailable);
+    return matchQ && matchCat && matchAvail;
+  });
+
+  // Sort
+  state.filtered.sort((a, b) => {
+    let va = a[state.sortKey], vb = b[state.sortKey];
+    if (typeof va === 'string') va = va.toLowerCase(), vb = vb.toLowerCase();
+    return state.sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+
+  renderTable();
+  renderStats();
+}
+
+function sortBy(key) {
+  if (state.sortKey === key) state.sortAsc = !state.sortAsc;
+  else { state.sortKey = key; state.sortAsc = true; }
+
+  document.querySelectorAll('.data-table th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  const idx = ['productName','categoryName','price'].indexOf(key);
+  if (idx >= 0) {
+    const ths = document.querySelectorAll('.data-table th');
+    ths[idx].classList.add(state.sortAsc ? 'sort-asc' : 'sort-desc');
+  }
+  applyFilters();
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  if (!state.filtered.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="5">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-text">Không tìm thấy món nào</div>
+          <div class="empty-sub">Thử thay đổi bộ lọc hoặc thêm món mới</div>
+        </div>
+      </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = state.filtered.map((p, i) => `
+    <tr style="animation-delay:${i * 0.03}s">
+      <td>
+        <div class="product-cell">
+          <div class="product-emoji">${CAT_EMOJI[p.categoryID]||'🍴'}</div>
+          <div>
+            <div class="product-name">${escHtml(p.productName)}</div>
+            ${p.description ? `<div class="product-desc">${escHtml(p.description)}</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td><span class="cat-badge ${CAT_CLASS[p.categoryID]||'cat-0'}">${escHtml(p.categoryName)}</span></td>
+      <td class="price-cell">${fmt(p.price)}</td>
+      <td>
+        <label class="toggle" title="${p.isAvailable?'Đang phục vụ':'Tạm ngưng'}">
+          <input type="checkbox" ${p.isAvailable?'checked':''}
+                 onchange="toggleAvailable(${p.productID}, this)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td>
+        <div class="actions" style="justify-content:flex-end">
+          <button class="action-btn" title="Chỉnh sửa" onclick="openDrawer(${p.productID})">✎</button>
+          <button class="action-btn delete" title="Xóa" onclick="openConfirm(${p.productID})">🗑</button>
+        </div>
+      </td>
+    </tr>`
+  ).join('');
+}
+
+function renderStats() {
+  const total  = state.products.length;
+  const avail  = state.products.filter(p => p.isAvailable).length;
+  const paused = total - avail;
+  const shown  = state.filtered.length;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-pill">Tổng: ${total} món</div>
+    <div class="stat-pill" style="color:var(--green)">Đang phục vụ: ${avail}</div>
+    ${paused ? `<div class="stat-pill" style="color:var(--amber)">Tạm ngưng: ${paused}</div>` : ''}
+    ${shown !== total ? `<div class="stat-pill active-filter">Đang lọc: ${shown} kết quả</div>` : ''}`;
+}
+
+// ── TOGGLE AVAILABLE ──────────────────────────────────────
+async function toggleAvailable(productId, checkbox) {
+  const prev = checkbox.checked;
+  try {
+    await fetch(`${API}/products/${productId}/toggle`, { method:'PATCH' });
+  } catch { /* dev mode */ }
+
+  const p = state.products.find(p => p.productID === productId);
+  if (p) p.isAvailable = !prev ? false : true; // toggle
+  // Thực ra đã toggle rồi qua checkbox, cập nhật state cho khớp
+  if (p) p.isAvailable = checkbox.checked;
+
+  renderStats();
+  showToast(checkbox.checked ? 'Đã bật phục vụ' : 'Đã tạm ngưng', 'success');
+}
+
+// ── DRAWER (ADD / EDIT) ───────────────────────────────────
+function openDrawer(productId = null) {
+  state.editId = productId;
+  clearForm();
+
+  if (productId) {
+    const p = state.products.find(p => p.productID === productId);
+    if (!p) return;
+    document.getElementById('drawerTitle').textContent = 'Chỉnh sửa món';
+    document.getElementById('fName').value     = p.productName;
+    document.getElementById('fCategory').value = p.categoryID;
+    document.getElementById('fPrice').value    = p.price;
+    document.getElementById('fDesc').value     = p.description || '';
+    document.getElementById('fImage').value    = p.imageUrl || '';
+    document.getElementById('fAvailable').checked = p.isAvailable;
+    previewImg(p.imageUrl || '');
+  } else {
+    document.getElementById('drawerTitle').textContent = 'Thêm món mới';
+  }
+
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  setTimeout(() => document.getElementById('fName').focus(), 300);
+}
+
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  state.editId = null;
+}
+
+function clearForm() {
+  ['fName','fPrice','fDesc','fImage'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fCategory').value = '';
+  document.getElementById('fAvailable').checked = true;
+  document.getElementById('imgPreview').innerHTML = '<span>Nhập URL để xem trước ảnh</span>';
+  document.getElementById('imgPreview').classList.remove('has-img');
+  ['errName','errCat','errPrice'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+    document.getElementById(id.replace('err','f') === 'fName' ? 'fName' :
+      id === 'errCat' ? 'fCategory' : 'fPrice')?.classList.remove('error');
+  });
+}
+
+function previewImg(url) {
+  const wrap = document.getElementById('imgPreview');
+  if (url && url.startsWith('http')) {
+    wrap.innerHTML = `<img src="${url}" onerror="this.parentElement.innerHTML='<span>Không tải được ảnh</span>'">`;
+    wrap.classList.add('has-img');
+  } else {
+    wrap.innerHTML = '<span>Nhập URL để xem trước ảnh</span>';
+    wrap.classList.remove('has-img');
+  }
+}
+
+function validateForm() {
+  let valid = true;
+  const name = document.getElementById('fName').value.trim();
+  const cat  = document.getElementById('fCategory').value;
+  const price= parseFloat(document.getElementById('fPrice').value);
+
+  if (!name) {
+    document.getElementById('errName').classList.add('show');
+    document.getElementById('fName').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('errName').classList.remove('show');
+    document.getElementById('fName').classList.remove('error');
+  }
+  if (!cat) {
+    document.getElementById('errCat').classList.add('show');
+    document.getElementById('fCategory').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('errCat').classList.remove('show');
+    document.getElementById('fCategory').classList.remove('error');
+  }
+  if (!price || price <= 0) {
+    document.getElementById('errPrice').classList.add('show');
+    document.getElementById('fPrice').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('errPrice').classList.remove('show');
+    document.getElementById('fPrice').classList.remove('error');
+  }
+  return valid;
+}
+
+async function saveProduct() {
+  if (!validateForm()) return;
+
+  const btn = document.getElementById('btnSave');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const body = {
+    categoryID:  parseInt(document.getElementById('fCategory').value),
+    productName: document.getElementById('fName').value.trim(),
+    description: document.getElementById('fDesc').value.trim(),
+    price:       parseFloat(document.getElementById('fPrice').value),
+    imageUrl:    document.getElementById('fImage').value.trim() || null,
+    isAvailable: document.getElementById('fAvailable').checked,
+  };
+
+  try {
+    let saved;
+    if (state.editId) {
+      const res = await fetch(`${API}/products/${state.editId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      saved = res.ok ? await res.json() : null;
+    } else {
+      const res = await fetch(`${API}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      saved = res.ok ? await res.json() : null;
+    }
+
+    // Dev mode: cập nhật local state nếu API lỗi
+    const catName = state.categories.find(c => c.categoryID == body.categoryID)?.categoryName || '';
+    if (state.editId) {
+      const idx = state.products.findIndex(p => p.productID === state.editId);
+      if (idx >= 0) state.products[idx] = { ...state.products[idx], ...body, categoryName: catName, ...(saved||{}) };
+    } else {
+      const newId = saved?.productID || Date.now();
+      state.products.push({ ...body, productID: newId, categoryName: catName });
+    }
+
+    applyFilters();
+    closeDrawer();
+    showToast(state.editId ? 'Đã cập nhật món' : 'Đã thêm món mới', 'success');
+  } catch {
+    showToast('Có lỗi xảy ra, thử lại', 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+// ── DELETE ────────────────────────────────────────────────
+function openConfirm(productId) {
+  state.deleteId = productId;
+  const p = state.products.find(p => p.productID === productId);
+  document.getElementById('confirmMsg').textContent =
+    `Xóa "${p?.productName}"? Món sẽ bị ẩn khỏi thực đơn.`;
+  document.getElementById('confirmModal').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+  state.deleteId = null;
+}
+
+async function confirmDelete() {
+  if (!state.deleteId) return;
+  try {
+    await fetch(`${API}/products/${state.deleteId}`, { method:'DELETE' });
+  } catch {}
+
+  state.products = state.products.filter(p => p.productID !== state.deleteId);
+  applyFilters();
+  closeConfirm();
+  showToast('Đã xóa món', 'success');
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function fmt(n) {
+  return new Intl.NumberFormat('vi-VN').format(n) + ' đ';
+}
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let _toastTimer;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// Đóng drawer khi nhấn Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeDrawer();
+    closeConfirm();
+  }
+});
+
+init();
+
+</script>
+<script src="auth.js"></script>
+<script>
+  Auth.require([2, 3]); // Manager or Admin only
+  Auth.renderUserBadge(document.getElementById('userNameDisplay'), null);
+</script>
+</body>
+</html>

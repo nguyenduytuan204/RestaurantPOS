@@ -1,0 +1,9 @@
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.doccache
+.vscode/
+.vs/
+*.db
+*.log

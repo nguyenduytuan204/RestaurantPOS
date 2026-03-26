@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng nhập — POS Nhà hàng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:    #1c1008;
+  --paper:  #fdf8f0;
+  --warm:   #f5ead6;
+  --ember:  #c9440e;
+  --ember2: #e8621c;
+  --gold:   #c4852a;
+  --muted:  #8a7560;
+  --line:   #e6ddd0;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+/* ── LEFT: decorative panel ─────────────────────────────── */
+.left-panel {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  overflow: hidden;
+}
+
+/* Animated diagonal stripes background */
+.left-panel::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 60px,
+    rgba(201,68,14,.04) 60px,
+    rgba(201,68,14,.04) 61px
+  );
+  animation: drift 30s linear infinite;
+}
+@keyframes drift { to { transform: translateX(120px) translateY(120px); } }
+
+/* Big decorative text */
+.deco-text {
+  position: absolute;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(80px, 12vw, 160px);
+  font-weight: 600;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(201,68,14,.12);
+  line-height: .9;
+  letter-spacing: -.02em;
+  user-select: none;
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+/* Floating orbs */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: .18;
+  animation: float var(--d, 8s) ease-in-out infinite alternate;
+}
+.orb-1 { width:320px;height:320px;background:#c9440e;top:10%;left:10%;--d:9s; }
+.orb-2 { width:200px;height:200px;background:#c4852a;bottom:15%;right:20%;--d:11s; }
+.orb-3 { width:160px;height:160px;background:#e8621c;top:55%;left:40%;--d:7s; }
+@keyframes float {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(-30px) scale(1.08); }
+}
+
+.brand-block {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.brand-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 52px;
+  font-weight: 600;
+  color: var(--paper);
+  line-height: 1;
+  letter-spacing: -.02em;
+  margin-bottom: 12px;
+}
+.brand-logo em {
+  font-style: italic;
+  color: var(--ember2);
+}
+.brand-tagline {
+  font-size: 13px;
+  color: rgba(253,248,240,.4);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+/* Role pills */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 48px;
+  position: relative;
+  z-index: 1;
+}
+.role-pill {
+  background: rgba(253,248,240,.05);
+  border: 1px solid rgba(253,248,240,.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: left;
+}
+.role-pill-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(253,248,240,.7);
+  margin-bottom: 3px;
+}
+.role-pill-desc {
+  font-size: 11px;
+  color: rgba(253,248,240,.3);
+  line-height: 1.4;
+}
+.role-pill-badge {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.badge-admin   { background: #c9440e; }
+.badge-manager { background: #c4852a; }
+.badge-cashier { background: #3ecf8e; }
+.badge-waiter  { background: #4a9eff; }
+
+/* ── RIGHT: login form ───────────────────────────────────── */
+.right-panel {
+  width: 440px;
+  flex-shrink: 0;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 44px;
+  position: relative;
+}
+
+/* Subtle top accent */
+.right-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ember), var(--gold));
+}
+
+.form-header { width: 100%; margin-bottom: 36px; }
+.form-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin-bottom: 8px;
+}
+.form-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+.form-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-weight: 300;
+}
+
+.form { width: 100%; }
+
+.field { margin-bottom: 20px; }
+
+.field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+.input-wrap { position: relative; }
+.field-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--warm);
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .18s, background .18s;
+}
+.field-input::placeholder { color: #c2b49e; }
+.field-input:focus {
+  border-color: var(--ember);
+  background: #fff;
+}
+
+select.field-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+.field-input.error { border-color: var(--ember); }
+
+/* Password toggle */
+.pw-toggle {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  padding: 4px;
+  transition: color .15s;
+}
+.pw-toggle:hover { color: var(--ink); }
+
+.field-error {
+  font-size: 12px;
+  color: var(--ember);
+  margin-top: 5px;
+  display: none;
+}
+.field-error.show { display: block; }
+
+/* Demo accounts shortcut */
+.demo-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.demo-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--warm);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.demo-chip:hover { background: #fff; border-color: var(--ember); color: var(--ember); }
+.demo-chip::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Error banner */
+.error-banner {
+  display: none;
+  background: #fdf0ed;
+  border: 1px solid #f0c4bb;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--ember);
+  margin-bottom: 18px;
+  animation: shake .3s ease;
+}
+.error-banner.show { display: block; }
+@keyframes shake {
+  0%,100%{ transform: translateX(0); }
+  20%    { transform: translateX(-6px); }
+  60%    { transform: translateX(6px); }
+}
+
+/* Submit button */
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  background: var(--ember);
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  letter-spacing: .02em;
+  transition: background .18s, transform .1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn-login:hover   { background: var(--ember2); }
+.btn-login:active  { transform: scale(.98); }
+.btn-login:disabled { background: #d4c8bc; cursor: not-allowed; transform: none; }
+
+/* Spinner inside button */
+.spin {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .55s linear infinite;
+  display: none;
+}
+.btn-login.loading .spin    { display: block; }
+.btn-login.loading .btn-txt { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.form-footer {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Entry animation */
+.right-panel > * {
+  animation: fadeUp .5s ease both;
+}
+.right-panel > *:nth-child(1) { animation-delay: .05s; }
+.right-panel > *:nth-child(2) { animation-delay: .1s;  }
+.right-panel > *:nth-child(3) { animation-delay: .15s; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+  .left-panel { display: none; }
+  .right-panel { width: 100%; padding: 40px 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LEFT DECORATIVE PANEL -->
+<div class="left-panel">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="deco-text">POS</div>
+
+  <div style="position:relative;z-index:1;width:100%;max-width:360px">
+    <div class="brand-block">
+      <div class="brand-logo">Nhà <em>Hàng</em></div>
+      <div class="brand-tagline">Hệ thống quản lý bán hàng</div>
+    </div>
+
+    <div class="role-grid">
+      <div class="role-pill">
+        <div class="role-pill-name">
+          <span class="role-pill-badge badge-admin"></span>Admin
+        </div>
+        <div class="role-pill-desc">Toàn quyền hệ thống, báo cáo, cài đặt</div>
+      </div>
+      <div class="role-pill">
+        <div class="role-pill-name">
+          <span class="role-pill-badge badge-manager"></span>Quản lý
+        </div>
+        <div class="role-pill-desc">Thực đơn, nhân sự, thống kê</div>
+      </div>
+      <div class="role-pill">
+        <div class="role-pill-name">
+          <span class="role-pill-badge badge-cashier"></span>Thu ngân
+        </div>
+        <div class="role-pill-desc">POS, đặt món, thanh toán</div>
+      </div>
+      <div class="role-pill">
+        <div class="role-pill-name">
+          <span class="role-pill-badge badge-waiter"></span>Phục vụ
+        </div>
+        <div class="role-pill-desc">Xem thực đơn, ghi order bàn</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT LOGIN PANEL -->
+<div class="right-panel">
+
+  <div class="form-header">
+    <div class="form-eyebrow">Đăng nhập</div>
+    <div class="form-title">Chào mừng<br>trở lại</div>
+    <div class="form-subtitle">Nhập thông tin tài khoản để tiếp tục</div>
+  </div>
+
+  <!-- Demo account shortcuts -->
+  <div style="width:100%;margin-bottom:8px;font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">
+    Tài khoản demo
+  </div>
+  <div class="demo-row">
+    <div class="demo-chip" onclick="fillDemo('admin','Admin@123')">admin</div>
+    <div class="demo-chip" onclick="fillDemo('thungan1','Pos@1234')">thu ngân</div>
+  </div>
+
+  <div class="form">
+    <div class="error-banner" id="errorBanner"></div>
+
+    <div class="field">
+      <label class="field-label">Tên đăng nhập</label>
+      <div class="input-wrap">
+        <input class="field-input" id="username"
+               placeholder="Nhập username..."
+               autocomplete="username"
+               onkeydown="if(event.key==='Enter')document.getElementById('password').focus()">
+      </div>
+      <div class="field-error" id="errUser">Vui lòng nhập tên đăng nhập</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">
+        Mật khẩu
+      </label>
+      <div class="input-wrap">
+        <input class="field-input" id="password" type="password"
+               placeholder="Nhập mật khẩu..."
+               autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="pw-toggle" type="button" onclick="togglePw()" id="pwToggle"
+                title="Hiện/ẩn mật khẩu">👁</button>
+      </div>
+      <div class="field-error" id="errPw">Vui lòng nhập mật khẩu</div>
+    </div>
+
+    <button class="btn-login" id="btnLogin" onclick="doLogin()">
+      <div class="spin"></div>
+      <span class="btn-txt">Đăng nhập</span>
+    </button>
+  </div>
+
+  <!-- REGISTER FORM -->
+  <div class="form" id="regForm" style="display: none;">
+    <div class="error-banner" id="regErrorBanner"></div>
+
+    <div class="field">
+      <label class="field-label">Họ và tên</label>
+      <div class="input-wrap">
+        <input class="field-input" id="regFullName" placeholder="Nhập tên nhân viên...">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Tên đăng nhập</label>
+      <div class="input-wrap">
+        <input class="field-input" id="regUsername" placeholder="Nhập username mới...">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Mật khẩu</label>
+      <div class="input-wrap">
+        <input class="field-input" id="regPassword" type="password" placeholder="Nhập mật khẩu...">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Vai trò</label>
+      <div class="input-wrap">
+        <select class="field-input" id="regRole">
+          <option value="0">Thu ngân (Cashier)</option>
+          <option value="1">Phục vụ (Waiter)</option>
+          <option value="2">Quản lý (Manager)</option>
+          <option value="3">Admin</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-login" id="btnRegister" onclick="doRegister()">
+      <div class="spin"></div>
+      <span class="btn-txt">Đăng ký thành viên</span>
+    </button>
+  </div>
+
+  <div class="form-footer" id="formFooter">
+    <div id="footerLogin">Chưa có tài khoản? <a href="#" onclick="showReg(true); return false;" style="color:var(--ember);font-weight:600;text-decoration:none">Đăng ký ngay</a></div>
+    <div id="footerReg" style="display:none">Đã có tài khoản? <a href="#" onclick="showReg(false); return false;" style="color:var(--ember);font-weight:600;text-decoration:none">Quay lại đăng nhập</a></div>
+  </div>
+
+</div>
+
+<script src="auth.js"></script>
+<script>
+// Nếu đã đăng nhập rồi → redirect luôn, không cần login lại
+if (Auth.isLoggedIn()) Auth.redirectByRole();
+
+const API = Auth.API_BASE;
+
+function fillDemo(user, pw) {
+  document.getElementById('username').value = user;
+  document.getElementById('password').value = pw;
+  document.getElementById('username').classList.remove('error');
+  document.getElementById('password').classList.remove('error');
+  document.getElementById('errorBanner').classList.remove('show');
+}
+
+function togglePw() {
+  const inp = document.getElementById('password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  document.getElementById('pwToggle').textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+function validate() {
+  let ok = true;
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+
+  if (!u) {
+    document.getElementById('errUser').classList.add('show');
+    document.getElementById('username').classList.add('error');
+    ok = false;
+  } else {
+    document.getElementById('errUser').classList.remove('show');
+    document.getElementById('username').classList.remove('error');
+  }
+  if (!p) {
+    document.getElementById('errPw').classList.add('show');
+    document.getElementById('password').classList.add('error');
+    ok = false;
+  } else {
+    document.getElementById('errPw').classList.remove('show');
+    document.getElementById('password').classList.remove('error');
+  }
+  return ok;
+}
+
+async function doLogin() {
+  if (!validate()) return;
+
+  const btn = document.getElementById('btnLogin');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  document.getElementById('errorBanner').classList.remove('show');
+
+  const body = {
+    username: document.getElementById('username').value.trim(),
+    password: document.getElementById('password').value,
+  };
+
+  try {
+    // Thử gọi API thật
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      Auth.saveSession(data);
+      Auth.redirectByRole();
+      return;
+    }
+
+    const err = await res.json();
+    showError(err.message || 'Đăng nhập thất bại');
+  } catch {
+    // ── DEV MODE: API chưa chạy → dùng mock ──────────────
+    const MOCK_USERS = [
+      { username:'admin',    password:'Admin@123', fullName:'Quản trị viên', role:3, roleLabel:'Admin' },
+      { username:'thungan1', password:'Pos@1234',  fullName:'Thu ngân 1',    role:0, roleLabel:'ThuNgan' },
+    ];
+    const found = MOCK_USERS.find(
+      u => u.username === body.username && u.password === body.password
+    );
+    if (found) {
+      Auth.saveSession({
+        token:     'mock-token-' + Date.now(),
+        username:  found.username,
+        fullName:  found.fullName,
+        role:      found.role,
+        roleLabel: found.roleLabel,
+        expiresAt: new Date(Date.now() + 10 * 3600 * 1000).toISOString(),
+      });
+      Auth.redirectByRole();
+    } else {
+      showError('Tên đăng nhập hoặc mật khẩu không đúng.');
+    }
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg;
+  el.classList.add('show');
+  // Trigger animation lại
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = '';
+}
+
+// Focus username khi tải xong
+window.addEventListener('load', () => {
+  document.getElementById('username').focus();
+});
+
+function showReg(isReg) {
+  document.querySelector('.form').style.display = isReg ? 'none' : 'block';
+  document.getElementById('regForm').style.display = isReg ? 'block' : 'none';
+  document.getElementById('footerLogin').style.display = isReg ? 'none' : 'block';
+  document.getElementById('footerReg').style.display = isReg ? 'block' : 'none';
+  
+  // Update header text
+  document.querySelector('.form-eyebrow').textContent = isReg ? 'Đăng ký' : 'Đăng nhập';
+  document.querySelector('.form-title').innerHTML = isReg ? 'Tạo tài khoản<br>nhân viên' : 'Chào mừng<br>trở lại';
+  document.querySelector('.form-subtitle').textContent = isReg ? 'Vui lòng nhập đầy đủ thông tin bên dưới' : 'Nhập thông tin tài khoản để tiếp tục';
+  
+  // Hide demo row if reg
+  document.querySelector('.demo-row').style.display = isReg ? 'none' : 'flex';
+  document.querySelector('div[style*="uppercase"]').style.display = isReg ? 'none' : 'block';
+  
+  document.getElementById('errorBanner').classList.remove('show');
+  document.getElementById('regErrorBanner').classList.remove('show');
+}
+
+async function doRegister() {
+  const fullName = document.getElementById('regFullName').value.trim();
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const role = parseInt(document.getElementById('regRole').value);
+
+  if (!fullName || !username || !password) {
+    showRegError('Vui lòng điền đầy đủ thông tin');
+    return;
+  }
+
+  const btn = document.getElementById('btnRegister');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, fullName, role })
+    });
+
+    if (res.ok) {
+      alert('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
+      showReg(false);
+      document.getElementById('username').value = username;
+      document.getElementById('password').value = password;
+    } else {
+      const err = await res.json();
+      showRegError(err.message || 'Lỗi đăng ký');
+    }
+  } catch (e) {
+    showRegError('Lỗi kết nối máy chủ');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function showRegError(msg) {
+  const el = document.getElementById('regErrorBanner');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+</script>
+</body>
+</html>
