@@ -124,6 +124,7 @@ public class DashboardDto
     public List<HourlyRevenueDto> HourlyRevenue { get; set; } = new();
     public List<RecentOrderDto> RecentOrders { get; set; } = new();
     public List<StaffRevenueDto> RevenueByStaff { get; set; } = new();
+    public string Message { get; set; } = string.Empty;
 }
 
 public class StaffRevenueDto

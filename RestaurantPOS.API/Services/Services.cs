@@ -731,7 +731,8 @@ public class DashboardService : IDashboardService
                 MonthRevenue     = monthRevenue,
                 HourlyRevenue    = hourlyRevenue,
                 RecentOrders     = recentOrders,
-                RevenueByStaff   = revenueByStaff
+                RevenueByStaff   = revenueByStaff,
+                Message          = $"Now: {now:yyyy-MM-dd HH:mm:ss}, TodayStart: {todayStart:yyyy-MM-dd HH:mm:ss}, OrdersCount: {todayPaid.Count}, TotalAllOrders: {await _db.Orders.CountAsync()}, TotalStatus2: {await _db.Orders.CountAsync(o => o.Status == 2)}"
             };
         }
         catch (Exception)

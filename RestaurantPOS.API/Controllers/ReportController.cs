@@ -16,7 +16,8 @@ public class ReportController : ControllerBase
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailyReport([FromQuery] DateTime? date = null)
     {
-        var report = await _reportService.GetDailyReportAsync(date ?? DateTime.Today);
+        var todayVn = DateTime.UtcNow.AddHours(7).Date;
+        var report = await _reportService.GetDailyReportAsync(date ?? todayVn);
         return Ok(report);
     }
 }
