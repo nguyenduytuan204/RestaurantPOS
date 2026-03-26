@@ -125,7 +125,7 @@ app.MapControllers();
         await auth.SeedAdminAsync();
 
         // FORCE FIX FONT: Xóa và nạp lại dữ liệu chuẩn C# Unicode
-        bool needForceFix = true; // Set to true to trigger one-time clean restore
+        bool needForceFix = false; // Set to false to preserve production data
         if (needForceFix)
         {
             Console.WriteLine("DEBUG: ENTERING FORCE FIX SEEDING...");
@@ -308,22 +308,14 @@ app.MapControllers();
             }
         }
 
-        // Đảm bảo các tài khoản mặc định và mật khẩu BCrypt luôn đúng
+        // Chỉ nạp tài khoản mẫu nếu chưa tồn tại (Tránh bị Reset mật khẩu khi restart server)
         var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Username == "admin");
-        if (adminUser != null) {
-            adminUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 11);
-            adminUser.FullName = "Quản trị viên";
-            adminUser.Role = 3;
-        } else {
+        if (adminUser == null) {
             db.Users.Add(new User { Username = "admin", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 11), FullName = "Quản trị viên", Role = 3 });
         }
 
         var cashierUser = await db.Users.FirstOrDefaultAsync(u => u.Username == "thungan1");
-        if (cashierUser != null) {
-            cashierUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Pos@1234", 11);
-            cashierUser.FullName = "Thu ngân 1";
-            cashierUser.Role = 0;
-        } else {
+        if (cashierUser == null) {
             db.Users.Add(new User { Username = "thungan1", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Pos@1234", 11), FullName = "Thu ngân 1", Role = 0 });
         }
 
