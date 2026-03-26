@@ -643,88 +643,101 @@ public class DashboardService : IDashboardService
 
     public async Task<DashboardDto> GetDashboardAsync()
     {
-        var now = DateTime.Now;
-        var todayStart = now.Date;
-        var todayEnd   = todayStart.AddDays(1);
-        var yesterdayStart = todayStart.AddDays(-1);
-        var monthStart = new DateTime(now.Year, now.Month, 1);
-
-        // Lấy tất cả order đã thanh toán hôm nay
-        var todayPaid = await _db.Orders
-            .Where(o => o.Status == 2 && o.CheckoutAt >= todayStart && o.CheckoutAt < todayEnd)
-            .Include(o => o.DiningTable)
-            .Include(o => o.User)
-            .ToListAsync();
-
-        // Doanh thu hôm qua
-        var yesterdayRevenue = await _db.Orders
-            .Where(o => o.Status == 2 && o.CheckoutAt >= yesterdayStart && o.CheckoutAt < todayStart)
-            .SumAsync(o => o.FinalAmount);
-
-        // Doanh thu tháng này
-        var monthRevenue = await _db.Orders
-            .Where(o => o.Status == 2 && o.CheckoutAt >= monthStart && o.CheckoutAt < todayEnd)
-            .SumAsync(o => o.FinalAmount);
-
-        // Đơn đang phục vụ
-        var activeOrders = await _db.Orders.CountAsync(o => o.Status == 0 || o.Status == 1);
-
-        var hourlyRevenue = todayPaid
-            .Where(o => o.CheckoutAt.HasValue) // Kiểm tra an toàn để tránh crash
-            .GroupBy(o => o.CheckoutAt!.Value.Hour)
-            .Select(g => new HourlyRevenueDto
-            {
-                Hour    = g.Key,
-                Revenue = g.Sum(o => o.FinalAmount)
-            })
-            .OrderBy(x => x.Hour)
-            .ToList();
-
-        // Doanh thu theo nhân viên
-        var revenueByStaff = todayPaid
-            .Where(o => o.User != null)
-            .GroupBy(o => o.User!.FullName)
-            .Select(g => new StaffRevenueDto
-            {
-                StaffName   = g.Key,
-                Revenue     = g.Sum(o => o.FinalAmount),
-                OrdersCount = g.Count()
-            })
-            .OrderByDescending(x => x.Revenue)
-            .ToList();
-
-        // Hoạt động gần đây (20 đơn cuối)
-        var recentOrders = todayPaid
-            .OrderByDescending(o => o.CheckoutAt)
-            .Take(20)
-            .Select(o => {
-                var diff = now - o.CheckoutAt!.Value;
-                string timeAgo = diff.TotalMinutes < 1 ? "vừa xong"
-                    : diff.TotalMinutes < 60 ? $"{(int)diff.TotalMinutes} phút trước"
-                    : $"{(int)diff.TotalHours} giờ trước";
-                return new RecentOrderDto
-                {
-                    OrderID     = o.OrderID,
-                    TableName   = o.DiningTable?.TableName ?? "?",
-                    FinalAmount = o.FinalAmount,
-                    StaffName   = o.User?.FullName ?? "—",
-                    CheckoutAt  = o.CheckoutAt!.Value,
-                    TimeAgo     = timeAgo
-                };
-            })
-            .ToList();
-
-        return new DashboardDto
+        try
         {
-            TodayRevenue     = todayPaid.Sum(o => o.FinalAmount),
-            YesterdayRevenue = yesterdayRevenue,
-            TodayOrders      = todayPaid.Count,
-            ActiveOrders     = activeOrders,
-            TodayCustomers   = todayPaid.Count, // mỗi đơn = 1 lượt khách
-            MonthRevenue     = monthRevenue,
-            HourlyRevenue    = hourlyRevenue,
-            RecentOrders     = recentOrders,
-            RevenueByStaff   = revenueByStaff
-        };
+            var now = DateTime.Now;
+            var todayStart = now.Date;
+            var todayEnd   = todayStart.AddDays(1);
+            var yesterdayStart = todayStart.AddDays(-1);
+            var monthStart = new DateTime(now.Year, now.Month, 1);
+
+            // 1. Lấy tất cả order đã thanh toán hôm nay
+            // Dùng AsNoTracking để tối ưu hiệu năng cho dashboard
+            var todayPaid = await _db.Orders
+                .Where(o => o.Status == 2 && o.CheckoutAt.HasValue && o.CheckoutAt >= todayStart && o.CheckoutAt < todayEnd)
+                .Include(o => o.DiningTable)
+                .Include(o => o.User)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // 2. Doanh thu hôm qua
+            var yesterdayRevenue = await _db.Orders
+                .Where(o => o.Status == 2 && o.CheckoutAt.HasValue && o.CheckoutAt >= yesterdayStart && o.CheckoutAt < todayStart)
+                .AsNoTracking()
+                .SumAsync(o => (decimal?)o.FinalAmount) ?? 0m;
+
+            // 3. Doanh thu tháng này
+            var monthRevenue = await _db.Orders
+                .Where(o => o.Status == 2 && o.CheckoutAt.HasValue && o.CheckoutAt >= monthStart && o.CheckoutAt < todayEnd)
+                .AsNoTracking()
+                .SumAsync(o => (decimal?)o.FinalAmount) ?? 0m;
+
+            // 4. Đơn đang phục vụ (Status 0=Chưa thanh toán, 1=Đã in bill nhưng chưa thu tiền)
+            var activeOrdersCount = await _db.Orders.CountAsync(o => o.Status == 0 || o.Status == 1);
+
+            // 5. Doanh thu theo giờ
+            var hourlyRevenue = todayPaid
+                .GroupBy(o => o.CheckoutAt!.Value.Hour)
+                .Select(g => new HourlyRevenueDto
+                {
+                    Hour    = g.Key,
+                    Revenue = g.Sum(o => o.FinalAmount),
+                    Orders  = g.Count()
+                })
+                .OrderBy(x => x.Hour)
+                .ToList();
+
+            // 6. Doanh thu theo nhân viên
+            var revenueByStaff = todayPaid
+                .Where(o => o.User != null)
+                .GroupBy(o => o.User!.FullName)
+                .Select(g => new StaffRevenueDto
+                {
+                    StaffName   = g.Key,
+                    Revenue     = g.Sum(o => o.FinalAmount),
+                    OrdersCount = g.Count()
+                })
+                .OrderByDescending(x => x.Revenue)
+                .ToList();
+
+            // 7. Hoạt động gần đây (20 đơn cuối)
+            var recentOrders = todayPaid
+                .OrderByDescending(o => o.CheckoutAt)
+                .Take(20)
+                .Select(o => {
+                    var diff = now - (o.CheckoutAt ?? now);
+                    string timeAgo = diff.TotalMinutes < 1 ? "vừa xong"
+                        : diff.TotalMinutes < 60 ? $"{(int)Math.Max(0, diff.TotalMinutes)} phút trước"
+                        : $"{(int)Math.Max(0, diff.TotalHours)} giờ trước";
+                    return new RecentOrderDto
+                    {
+                        OrderID     = o.OrderID,
+                        TableName   = o.DiningTable?.TableName ?? "?",
+                        FinalAmount = o.FinalAmount,
+                        StaffName   = o.User?.FullName ?? "—",
+                        CheckoutAt  = o.CheckoutAt ?? now,
+                        TimeAgo     = timeAgo
+                    };
+                })
+                .ToList();
+
+            return new DashboardDto
+            {
+                TodayRevenue     = todayPaid.Sum(o => o.FinalAmount),
+                YesterdayRevenue = yesterdayRevenue,
+                TodayOrders      = todayPaid.Count,
+                ActiveOrders     = activeOrdersCount,
+                TodayCustomers   = todayPaid.Count,
+                MonthRevenue     = monthRevenue,
+                HourlyRevenue    = hourlyRevenue,
+                RecentOrders     = recentOrders,
+                RevenueByStaff   = revenueByStaff
+            };
+        }
+        catch (Exception)
+        {
+            // Trả về DTO trống thay vì crash 500
+            return new DashboardDto();
+        }
     }
 }

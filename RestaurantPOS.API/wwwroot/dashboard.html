@@ -761,8 +761,20 @@
     loadUserInfo();
     loadDashboard();
 
-    // Auto-refresh mỗi 60 giây
-    setInterval(loadDashboard, 60_000);
+    // Auto-refresh mỗi 10 giây (trước đây là 60 giây)
+    setInterval(loadDashboard, 10_000);
+
+    // Refresh khi quay lại tab này
+    window.addEventListener('focus', () => {
+      loadDashboard();
+    });
+
+    // Refresh khi nhận tín hiệu từ tab khác (Thu ngân vừa thanh toán)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'pos_order_updated') {
+        loadDashboard();
+      }
+    });
   </script>
 </body>
 </html>

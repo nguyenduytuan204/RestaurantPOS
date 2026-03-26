@@ -2193,6 +2193,17 @@
       }
     }
 
+    // Làm mới sơ đồ bàn "ngầm" (không hiện thông báo lỗi rườm rà)
+    async function silentRefreshFloor() {
+      try {
+        const res = await fetch(`${API}/areas`);
+        if (res.ok) {
+          state.areas = await res.json();
+          renderTableGrid();
+        }
+      } catch (e) {}
+    }
+
     // ── Tải thực đơn ───────────────────────
     async function loadMenu() {
       try {
@@ -2643,6 +2654,10 @@
         state.selectedTableName = ''; state.activeOrderId = null;
         updateCartUI();
         await loadFloorMap();
+        
+        // Gửi tín hiệu đồng bộ cho các tab khác (ví dụ: Dashboard)
+        localStorage.setItem('pos_order_updated', Date.now());
+        
         showToast('Thanh toán hoàn tất!');
       } catch (e) {
         console.error(e); showToast('⚠️ Thanh toán thất bại!');
