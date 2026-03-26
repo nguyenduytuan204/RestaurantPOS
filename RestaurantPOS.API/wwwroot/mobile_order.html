@@ -325,6 +325,12 @@
       
       const filterSection = document.getElementById('filterSection');
       if (filterSection) filterSection.style.display = tabId === 'tab-tables' ? 'block' : 'none';
+
+      // Hide footer on Tables tab, show on others
+      const cartFooter = document.getElementById('cartActionState');
+      if (cartFooter) {
+        cartFooter.style.display = (tabId === 'tab-tables') ? 'none' : 'flex';
+      }
       
       window.scrollTo(0,0);
       
