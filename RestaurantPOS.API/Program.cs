@@ -272,60 +272,13 @@ app.MapControllers();
 
             await db.SaveChangesAsync();
 
-            // 6. Seed Active Order for Table B2.3 (Recreate the bill)
+            // 6. Seed Active Order (Bỏ qua phần seed đơn hàng mẫu cho production sạch sẽ)
+            /*
             var tableB23 = await db.DiningTables.FirstOrDefaultAsync(t => t.TableName == "B2.3");
-            var admin = await db.Users.FirstOrDefaultAsync(u => u.Username == "admin") ?? new User { UserID = 1 };
+            ...
+            */
             
-            if (tableB23 != null)
-            {
-                var billOrder = new Order
-                {
-                    DiningTable = tableB23,
-                    UserID = admin.UserID,
-                    Status = 1, // Occupied
-                    CreatedAt = DateTime.Now.AddHours(-2), // 2 hours ago
-                    Note = "HD088481"
-                };
-                db.Orders.Add(billOrder);
-                await db.SaveChangesAsync();
-
-                var pTiger = await db.Products.FirstAsync(p => p.ProductName == "Tiger bạc");
-                var pSoda = await db.Products.FirstAsync(p => p.ProductName == "Soda tắc xí muội");
-                var pPepsi = await db.Products.FirstAsync(p => p.ProductName == "Pepsi");
-                var p7up = await db.Products.FirstAsync(p => p.ProductName == "7 up");
-                var pSuoi = await db.Products.FirstAsync(p => p.ProductName == "Nước suối");
-                var pEpDuaHau = await db.Products.FirstAsync(p => p.ProductName == "NƯỚC ÉP DƯA HẤU");
-                var pCombo = await db.Products.FirstAsync(p => p.ProductName == "COMBO ĐẬM VỊ");
-                var pOc = await db.Products.FirstAsync(p => p.ProductName == "Ốc hương trứng muối");
-                var pEch = await db.Products.FirstAsync(p => p.ProductName == "Ếch núp rơm");
-                var pGoi = await db.Products.FirstAsync(p => p.ProductName == "Gỏi xoài tôm dẻo");
-                var pRauCua = await db.Products.FirstAsync(p => p.ProductName == "Rau càng cua bò trứng");
-                var pSunGa = await db.Products.FirstAsync(p => p.ProductName == "Sụn gà cháy tỏi");
-                var pKhoai = await db.Products.FirstAsync(p => p.ProductName == "Khoai tây chiên");
-                var pKhan = await db.Products.FirstAsync(p => p.ProductName == "KHĂN");
-                var pRauThem = await db.Products.FirstAsync(p => p.ProductName == "Rau thêm (tặng)");
-
-                db.OrderDetails.AddRange(
-                    new OrderDetail { Order = billOrder, Product = pTiger, Quantity = 10, UnitPrice = pTiger.Price },
-                    new OrderDetail { Order = billOrder, Product = pSoda, Quantity = 1, UnitPrice = pSoda.Price },
-                    new OrderDetail { Order = billOrder, Product = pPepsi, Quantity = 1, UnitPrice = pPepsi.Price },
-                    new OrderDetail { Order = billOrder, Product = p7up, Quantity = 2, UnitPrice = p7up.Price },
-                    new OrderDetail { Order = billOrder, Product = pSuoi, Quantity = 1, UnitPrice = pSuoi.Price },
-                    new OrderDetail { Order = billOrder, Product = pEpDuaHau, Quantity = 2, UnitPrice = pEpDuaHau.Price },
-                    new OrderDetail { Order = billOrder, Product = pCombo, Quantity = 1, UnitPrice = pCombo.Price },
-                    new OrderDetail { Order = billOrder, Product = pOc, Quantity = 1, UnitPrice = pOc.Price },
-                    new OrderDetail { Order = billOrder, Product = pEch, Quantity = 1, UnitPrice = pEch.Price },
-                    new OrderDetail { Order = billOrder, Product = pGoi, Quantity = 1, UnitPrice = pGoi.Price },
-                    new OrderDetail { Order = billOrder, Product = pRauCua, Quantity = 1, UnitPrice = pRauCua.Price },
-                    new OrderDetail { Order = billOrder, Product = pSunGa, Quantity = 1, UnitPrice = pSunGa.Price },
-                    new OrderDetail { Order = billOrder, Product = pKhoai, Quantity = 1, UnitPrice = pKhoai.Price },
-                    new OrderDetail { Order = billOrder, Product = pKhan, Quantity = 6, UnitPrice = pKhan.Price },
-                    new OrderDetail { Order = billOrder, Product = pRauThem, Quantity = 2, UnitPrice = pRauThem.Price }
-                );
-                
-                // Status messages as items
-                var pBaoThan = await db.Products.FirstAsync(p => p.ProductName == "BÁO LÊN THAN");
-                var pBaoLo = await db.Products.FirstAsync(p => p.ProductName == "BÁO XUỐNG LÒ BẾP");
+            await db.SaveChangesAsync();
                 var pBaoLau = await db.Products.FirstAsync(p => p.ProductName == "BÁO LÊN LẨU");
                 var pBaoBep = await db.Products.FirstAsync(p => p.ProductName == "BÁO LÊN BẾP");
                 
