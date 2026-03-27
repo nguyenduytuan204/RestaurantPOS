@@ -152,12 +152,14 @@ app.UseAuthorization();
 app.MapControllers();
 
     // ── 9. SEED DỮ LIỆU MẶC ĐỊNH & FIX FONT ──────────────────
-    using (var scope = app.Services.CreateScope())
+    try 
     {
-        var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.EnsureCreated();
-        await auth.SeedAdminAsync();
+        using (var scope = app.Services.CreateScope())
+        {
+            var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.EnsureCreated();
+            await auth.SeedAdminAsync();
 
         // Kiểm tra xem đã có dữ liệu chưa. Nếu chưa có thì mới nạp (Tránh mất bàn đã có)
         bool dbIsEmpty = !db.Areas.Any();
