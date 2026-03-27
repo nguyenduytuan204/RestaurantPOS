@@ -271,45 +271,26 @@ app.MapControllers();
             );
 
             await db.SaveChangesAsync();
-
-            // 6. Seed Active Order (Bỏ qua phần seed đơn hàng mẫu cho production sạch sẽ)
-            /*
-            var tableB23 = await db.DiningTables.FirstOrDefaultAsync(t => t.TableName == "B2.3");
-            ...
-            */
-            
-            await db.SaveChangesAsync();
-                var pBaoLau = await db.Products.FirstAsync(p => p.ProductName == "BÁO LÊN LẨU");
-                var pBaoBep = await db.Products.FirstAsync(p => p.ProductName == "BÁO LÊN BẾP");
-                
-                db.OrderDetails.AddRange(
-                    new OrderDetail { Order = billOrder, Product = pBaoThan, Quantity = 1, UnitPrice = 0 },
-                    new OrderDetail { Order = billOrder, Product = pBaoLo, Quantity = 1, UnitPrice = 0 },
-                    new OrderDetail { Order = billOrder, Product = pBaoLau, Quantity = 1, UnitPrice = 0 },
-                    new OrderDetail { Order = billOrder, Product = pBaoBep, Quantity = 1, UnitPrice = 0 }
-                );
-
-                await db.SaveChangesAsync();
-                
-                // Recalculate Total
-                billOrder.TotalAmount = billOrder.OrderDetails.Sum(d => d.SubTotal);
-                billOrder.FinalAmount = billOrder.TotalAmount;
-                await db.SaveChangesAsync();
-            }
         }
-
-        // Chỉ nạp tài khoản mẫu nếu chưa tồn tại (Tránh bị Reset mật khẩu khi restart server)
+        
+        // --- 10. ADMIN ACCOUNT SEEDING ---
         var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Username == "admin");
-        if (adminUser == null) {
-            db.Users.Add(new User { Username = "admin", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 11), FullName = "Quản trị viên", Role = 3 });
+        if (adminUser == null)
+        {
+            db.Users.Add(new User 
+            { 
+                Username = "admin", 
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 11), 
+                FullName = "Quản trị viên", 
+                Role = 3 
+            });
+            await db.SaveChangesAsync();
         }
-
-        var cashierUser = await db.Users.FirstOrDefaultAsync(u => u.Username == "thungan1");
-        if (cashierUser == null) {
-            db.Users.Add(new User { Username = "thungan1", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Pos@1234", 11), FullName = "Thu ngân 1", Role = 0 });
-        }
-
-        await db.SaveChangesAsync();
     }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during production initialization: {ex.Message}");
+}
 
 app.Run();
