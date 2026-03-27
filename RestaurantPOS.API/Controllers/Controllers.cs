@@ -2,6 +2,7 @@
 //  Controllers/  —  Nhận HTTP Request, trả HTTP Response
 //  Controller KHÔNG chứa logic — chỉ gọi Service
 // ============================================================
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantPOS.API.DTOs;
 using RestaurantPOS.API.Services;
@@ -69,13 +70,21 @@ public class AreasController : ControllerBase
         return success ? NoContent() : NotFound();
     }
 
-    // POST /api/areas/tables/{tableId}/open?userId=1
+    // POST /api/areas/tables/{tableId}/open
+    [Authorize]
     [HttpPost("tables/{tableId}/open")]
-    public async Task<IActionResult> OpenTable(int tableId, [FromQuery] int userId = 1)
+    public async Task<IActionResult> OpenTable(int tableId, [FromQuery] int? userId = null)
     {
         try
         {
-            var order = await _tableService.CreateOrderAsync(tableId, userId);
+            // Tự động lấy UserID từ Token nếu không truyền vào query
+            if (!userId.HasValue || userId <= 1)
+            {
+                var claimId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(claimId, out int tid)) userId = tid;
+            }
+
+            var order = await _tableService.CreateOrderAsync(tableId, userId ?? 1);
             return CreatedAtAction(nameof(OpenTable), new { tableId }, order);
         }
         catch (InvalidOperationException ex)

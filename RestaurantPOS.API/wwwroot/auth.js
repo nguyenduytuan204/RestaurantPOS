@@ -45,27 +45,47 @@ const Auth = (() => {
     }
 
     function saveSession(data) {
+        // data: { token, username, fullName, role, roleLabel, expiresAt, userId }
         trackRecentUser(data.username);
         localStorage.setItem(TOKEN_KEY, data.token);
-        localStorage.setItem(USER_KEY, JSON.stringify({
-            username:  data.username,
-            fullName:  data.fullName,
-            role:      data.role,
-            roleLabel: data.roleLabel,
-            expiresAt: data.expiresAt,
-        }));
+        localStorage.setItem('pos_username',   data.username);
+        localStorage.setItem('pos_fullname',   data.fullName);
+        localStorage.setItem('pos_role',       data.role);
+        localStorage.setItem('pos_rolelabel',  data.roleLabel);
+        localStorage.setItem('pos_expires',    data.expiresAt);
+        if (data.userId) localStorage.setItem('pos_userid', data.userId);
     }
 
-    function getToken()  { return localStorage.getItem(TOKEN_KEY); }
+    function getSession() {
+        return {
+            token:     localStorage.getItem(TOKEN_KEY),
+            username:  localStorage.getItem('pos_username'),
+            fullName:  localStorage.getItem('pos_fullname'),
+            role:      parseInt(localStorage.getItem('pos_role')),
+            roleLabel: localStorage.getItem('pos_rolelabel'),
+            expiresAt: localStorage.getItem('pos_expires'),
+            userId:    parseInt(localStorage.getItem('pos_userid')) || null // Changed default to null for consistency
+        };
+    }
+
+    function getToken()  { return getSession().token; }
     function getUser()   {
-        const raw = localStorage.getItem(USER_KEY);
-        return raw ? JSON.parse(raw) : null;
+        const session = getSession();
+        // Reconstruct the user object as it was before, but with userId
+        if (!session.username) return null; // If no username, assume no user data
+        return {
+            username:  session.username,
+            fullName:  session.fullName,
+            role:      session.role,
+            roleLabel: session.roleLabel,
+            expiresAt: session.expiresAt,
+            userId:    session.userId,
+        };
     }
 
     function isLoggedIn() {
-        const token = getToken();
-        const user  = getUser();
-        if (!token || !user) return false;
+        const session = getSession();
+        if (!session.token || !session.username) return false;
 
         // Kiểm tra token chưa hết hạn (so sánh local)
         if (new Date(user.expiresAt) < new Date()) {

@@ -2350,7 +2350,13 @@
 
     async function openTable(tableId) {
       try {
-        const res = await fetch(`${API}/areas/tables/${tableId}/open?userId=1`, { method: 'POST' });
+        const session = Auth.getSession();
+        const res = await fetch(`${API}/areas/tables/${tableId}/open`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.token}`
+          }
+        });
         if (res.status === 409) { showToast('Bàn đã có người!'); return; }
         if (!res.ok) throw new Error(res.statusText);
         const order = await res.json();
