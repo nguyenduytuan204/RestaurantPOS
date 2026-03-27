@@ -90,9 +90,8 @@ public class AuthService : IAuthService
     {
         if (!await _db.Users.AnyAsync())
         {
-            _db.Users.AddRange(
-                new User { Username = "admin",    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 11), FullName = "Quản trị viên", Role = 3 },
-                new User { Username = "thungan1", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Pos@1234",  11), FullName = "Thu ngân 1",    Role = 0 }
+            _db.Users.Add(
+                new User { Username = "admin", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 11), FullName = "Quản trị viên", Role = 3 }
             );
             await _db.SaveChangesAsync();
         }

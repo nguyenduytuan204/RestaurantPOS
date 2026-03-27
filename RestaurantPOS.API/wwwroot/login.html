@@ -596,27 +596,7 @@ async function doLogin() {
     const err = await res.json();
     showError(err.message || 'Đăng nhập thất bại');
   } catch {
-    // ── DEV MODE: API chưa chạy → dùng mock ──────────────
-    const MOCK_USERS = [
-      { username:'admin',    password:'Admin@123', fullName:'Quản trị viên', role:3, roleLabel:'Admin' },
-      { username:'thungan1', password:'Pos@1234',  fullName:'Thu ngân 1',    role:0, roleLabel:'ThuNgan' },
-    ];
-    const found = MOCK_USERS.find(
-      u => u.username === body.username && u.password === body.password
-    );
-    if (found) {
-      Auth.saveSession({
-        token:     'mock-token-' + Date.now(),
-        username:  found.username,
-        fullName:  found.fullName,
-        role:      found.role,
-        roleLabel: found.roleLabel,
-        expiresAt: new Date(Date.now() + 10 * 3600 * 1000).toISOString(),
-      });
-      Auth.redirectByRole();
-    } else {
-      showError('Tên đăng nhập hoặc mật khẩu không đúng.');
-    }
+    showError('Tên đăng nhập hoặc mật khẩu không đúng.');
   } finally {
     btn.classList.remove('loading');
     btn.disabled = false;
