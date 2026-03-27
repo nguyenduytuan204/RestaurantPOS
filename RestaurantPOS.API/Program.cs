@@ -22,18 +22,39 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── 2. DATABASE (Entity Framework Core) ──────────────────
-var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+// Chuẩn hóa hành vi DateTime cho PostgreSQL
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-if (!string.IsNullOrEmpty(dbUrl))
+// Ưu tiên các biến môi trường từ Railway (PGHOST, PGPORT, v.v.)
+var pgHost = Environment.GetEnvironmentVariable("PGHOST");
+var pgPort = Environment.GetEnvironmentVariable("PGPORT");
+var pgUser = Environment.GetEnvironmentVariable("PGUSER");
+var pgPass = Environment.GetEnvironmentVariable("PGPASSWORD");
+var pgDb   = Environment.GetEnvironmentVariable("PGDATABASE");
+var dbUrl  = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrEmpty(pgHost))
 {
-    // Chuyển đổi postgres://user:pass@host:port/database sang Npgsql format
-    var uri = new Uri(dbUrl);
-    var userInfo = uri.UserInfo.Split(':');
-    var user = Uri.UnescapeDataString(userInfo[0]);
-    var pass = Uri.UnescapeDataString(userInfo[userInfo.Length > 1 ? 1 : 0]);
-    
-    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
+    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPass};SSL Mode=Require;Trust Server Certificate=true";
+    Console.WriteLine($"DEBUG: Using Railway PG* variables. Host: {pgHost}");
+}
+else if (!string.IsNullOrEmpty(dbUrl))
+{
+    try 
+    {
+        var uri = new Uri(dbUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        var user = Uri.UnescapeDataString(userInfo[0]);
+        var pass = Uri.UnescapeDataString(userInfo[userInfo.Length > 1 ? 1 : 0]);
+        connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
+        Console.WriteLine($"DEBUG: Using DATABASE_URL. Host: {uri.Host}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"ERROR parsing DATABASE_URL: {ex.Message}");
+    }
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
