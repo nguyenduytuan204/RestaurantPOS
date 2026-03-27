@@ -328,6 +328,8 @@
         cartFooter.style.setProperty('display', 'none', 'important');
       } else {
         cartFooter.style.setProperty('display', 'flex', 'important');
+        const tPrice = document.getElementById('cartTotalPrice');
+        if (tPrice) tPrice.textContent = fmtMoney(totalPrice);
       }
     }
 
@@ -641,10 +643,7 @@
           `;
         }
         newList.innerHTML = html;
-        const tQty = document.getElementById('cartTotalQty');
-        const tPrice = document.getElementById('cartTotalPrice');
-        if (tQty) tQty.textContent = totalQty;
-        if (tPrice) tPrice.textContent = fmtMoney(totalPrice);
+        syncFooterVisibility(); // Grand total update
       } else if (newBlock) newBlock.style.display = 'none';
     }
 
