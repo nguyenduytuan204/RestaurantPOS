@@ -23,7 +23,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // ── 2. DATABASE (Entity Framework Core) ──────────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=restaurant.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ── 3. REPOSITORIES ───────────────────────────────────────
 builder.Services.AddScoped<IOrderRepository,   OrderRepository>();
