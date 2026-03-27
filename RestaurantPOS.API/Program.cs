@@ -22,8 +22,22 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── 2. DATABASE (Entity Framework Core) ──────────────────
+var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (!string.IsNullOrEmpty(dbUrl))
+{
+    // Chuyển đổi postgres://user:pass@host:port/database sang Npgsql format
+    var uri = new Uri(dbUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    var user = Uri.UnescapeDataString(userInfo[0]);
+    var pass = Uri.UnescapeDataString(userInfo[userInfo.Length > 1 ? 1 : 0]);
+    
+    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // ── 3. REPOSITORIES ───────────────────────────────────────
 builder.Services.AddScoped<IOrderRepository,   OrderRepository>();
