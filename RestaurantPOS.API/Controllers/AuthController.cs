@@ -56,6 +56,7 @@ public class AuthController : ControllerBase
             username = User.FindFirst(ClaimTypes.Name)?.Value,
             fullName = User.FindFirst(ClaimTypes.GivenName)?.Value,
             roleCode = User.FindFirst("RoleCode")?.Value,
+            roleLabel = User.FindFirst(ClaimTypes.Role)?.Value,
         });
     }
 
@@ -78,7 +79,7 @@ public class AuthController : ControllerBase
 
     // GET /api/auth/staff
     [HttpGet("staff")]
-    [AllowAnonymous] // Cho phép front-end lấy danh sách tạm nếu cần, hoặc [Authorize]
+    [Authorize(Roles = "Admin, Manager, Cashier")]
     public async Task<IActionResult> GetStaff()
     {
         var staff = await _authService.GetStaffAsync();

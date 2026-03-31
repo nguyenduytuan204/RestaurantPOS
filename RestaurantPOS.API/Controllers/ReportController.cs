@@ -6,7 +6,7 @@ namespace RestaurantPOS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "ManagerUp")]
+[Authorize(Roles = "Admin, Manager")]
 public class ReportController : ControllerBase
 {
     private readonly IReportService _reportService;

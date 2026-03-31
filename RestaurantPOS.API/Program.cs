@@ -25,9 +25,7 @@ builder.Services.AddSwaggerGen(c =>
 // Chuẩn hóa hành vi DateTime cho PostgreSQL
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-// Ưu tiên các biến môi trường từ Railway (PGHOST, PGPORT, v.v.)
+string? connectionString = null;
 var pgHost = Environment.GetEnvironmentVariable("PGHOST");
 var pgPort = Environment.GetEnvironmentVariable("PGPORT");
 var pgUser = Environment.GetEnvironmentVariable("PGUSER");
@@ -38,7 +36,8 @@ var dbUrl  = Environment.GetEnvironmentVariable("DATABASE_URL");
 if (!string.IsNullOrEmpty(pgHost))
 {
     connectionString = $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPass};SSL Mode=Require;Trust Server Certificate=true";
-    Console.WriteLine($"DEBUG: Using Railway PG* variables. Host: {pgHost}");
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+    Console.WriteLine("DEBUG: Using Railway PG* environment variables.");
 }
 else if (!string.IsNullOrEmpty(dbUrl))
 {
@@ -49,16 +48,21 @@ else if (!string.IsNullOrEmpty(dbUrl))
         var user = Uri.UnescapeDataString(userInfo[0]);
         var pass = Uri.UnescapeDataString(userInfo[userInfo.Length > 1 ? 1 : 0]);
         connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine($"DEBUG: Using DATABASE_URL. Host: {uri.Host}");
+        builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+        Console.WriteLine("DEBUG: Using DATABASE_URL environment variable.");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"ERROR parsing DATABASE_URL: {ex.Message}");
     }
 }
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+else 
+{
+    // Local development — Use SQLite to avoid connection issues
+    var sqliteConn = builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=RestaurantPOS.db";
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(sqliteConn));
+    Console.WriteLine("DEBUG: Using Local SQLite database.");
+}
 
 // ── 3. REPOSITORIES ───────────────────────────────────────
 builder.Services.AddScoped<IOrderRepository,   OrderRepository>();
@@ -108,7 +112,6 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000")
               .SetIsOriginAllowed(origin =>
               {
-                  // Cho phép file:// (origin == "null") và localhost
                   if (string.IsNullOrEmpty(origin) || origin == "null") return true;
                   return origin.StartsWith("http://localhost") || 
                          origin.StartsWith("https://localhost") || 
@@ -129,7 +132,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
-// ── 7.8 CLEAN URLS (No .html extension) ────────────────────
+
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value;
@@ -147,152 +150,73 @@ app.Use(async (context, next) =>
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.UseAuthentication();   // phải trước UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-    // ── 9. SEED DỮ LIỆU MẶC ĐỊNH & FIX FONT ──────────────────
-    try 
+// ── 9. SEED DATA ──────────────────────────────────────────
+try 
+{
+    using (var scope = app.Services.CreateScope())
     {
-        using (var scope = app.Services.CreateScope())
-        {
-            var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureCreated();
-            await auth.SeedAdminAsync();
+        var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        
+        db.Database.EnsureCreated(); // Creates SQLite file if missing
+        await auth.SeedAdminAsync();
 
-        // Kiểm tra xem đã có dữ liệu chưa. Nếu chưa có thì mới nạp (Tránh mất bàn đã có)
-        bool dbIsEmpty = !db.Areas.Any();
-        bool needForceFix = false; 
-
-        if (needForceFix || dbIsEmpty)
+        if (!db.Areas.Any())
         {
-            if (needForceFix) {
-                Console.WriteLine("DEBUG: FORCE DELETING OLD DATA...");
-                db.Database.ExecuteSqlRaw("DELETE FROM OrderDetails");
-                db.Database.ExecuteSqlRaw("DELETE FROM Orders");
-                db.Database.ExecuteSqlRaw("DELETE FROM Products");
-                db.Database.ExecuteSqlRaw("DELETE FROM DiningTables");
-                db.Database.ExecuteSqlRaw("DELETE FROM Areas");
-                db.Database.ExecuteSqlRaw("DELETE FROM Categories");
-                db.Database.ExecuteSqlRaw("DELETE FROM PaymentMethods");
-                try {
-                    db.Database.ExecuteSqlRaw("DELETE FROM sqlite_sequence WHERE name IN ('OrderDetails', 'Orders', 'Products', 'DiningTables', 'Areas', 'Categories', 'PaymentMethods')");
-                } catch {}
-            }
-            
-            Console.WriteLine("DEBUG: SEEDING INITIAL DATA...");
+            Console.WriteLine("DEBUG: SEEDING EXTENSIVE INITIAL DATA...");
             
             // 1. Payment Methods
             db.PaymentMethods.AddRange(
                 new PaymentMethod { MethodName = "Tiền mặt", Description = "Thanh toán bằng tiền mặt", IsActive = true },
-                new PaymentMethod { MethodName = "Chuyển khoản", Description = "Chuyển khoản ngân hàng / QR", IsActive = true }
+                new PaymentMethod { MethodName = "Chuyển khoản", Description = "Chuyển khoản ngân hàng / QR", IsActive = true },
+                new PaymentMethod { MethodName = "VNPay", Description = "Thanh toán điện tử VNPay", IsActive = true }
             );
 
             // 2. Categories
-            var categories = new List<Category>
-            {
-                new() { CategoryName = "BẾP THAN", SortOrder = 1 },
-                new() { CategoryName = "COMBO", SortOrder = 2 },
-                new() { CategoryName = "Marketing", SortOrder = 3 },
-                new() { CategoryName = "MÓN CHAY", SortOrder = 4 },
-                new() { CategoryName = "ỐC NHÀ NỌ", SortOrder = 5 },
-                new() { CategoryName = "PHỤ THU", SortOrder = 6 },
-                new() { CategoryName = "ĐẶC SẢN", SortOrder = 7 },
-                new() { CategoryName = "ĂN NÀY", SortOrder = 8 },
-                new() { CategoryName = "ĂN NỌ", SortOrder = 9 },
-                new() { CategoryName = "CHẤM & CUỐN", SortOrder = 10 },
-                new() { CategoryName = "RAU XANH", SortOrder = 11 },
-                new() { CategoryName = "NO CÁI BỤNG", SortOrder = 12 },
-                new() { CategoryName = "ẤM CÁI BỤNG", SortOrder = 13 },
-                new() { CategoryName = "MÓN NƯỚNG", SortOrder = 14 },
-                new() { CategoryName = "NƯỚNG SẴN", SortOrder = 15 },
-                new() { CategoryName = "MÓN THÊM", SortOrder = 16 },
-                new() { CategoryName = "NƯỚC GIẢI KHÁT", SortOrder = 17 },
-                new() { CategoryName = "BIA", SortOrder = 18 },
-                new() { CategoryName = "RƯỢU", SortOrder = 19 }
-            };
-            db.Categories.AddRange(categories);
+            var cat1 = new Category { CategoryName = "ẤM CÁI BỤNG", SortOrder = 1 };
+            var cat2 = new Category { CategoryName = "GIẢI KHÁT", SortOrder = 2 };
+            var cat3 = new Category { CategoryName = "TRÁNG MIỆNG", SortOrder = 3 };
+            db.Categories.AddRange(cat1, cat2, cat3);
 
             // 3. Areas
-            var area1 = new Area { AreaName = "Khu 1", SortOrder = 1 };
-            var area2 = new Area { AreaName = "Khu 2", SortOrder = 2 };
-            var areaVip = new Area { AreaName = "Khu VIP", SortOrder = 3 };
-            db.Areas.AddRange(area1, area2, areaVip);
+            var area1 = new Area { AreaName = "Tầng 1", SortOrder = 1 };
+            var area2 = new Area { AreaName = "Sân vườn", SortOrder = 2 };
+            db.Areas.AddRange(area1, area2);
             await db.SaveChangesAsync();
 
-            // 4. Dining Tables
-            for (int i = 1; i <= 8; i++) db.DiningTables.Add(new DiningTable { Area = area1, TableName = $"Bàn 1-{i:D2}", Capacity = 4 });
-            for (int i = 1; i <= 8; i++) db.DiningTables.Add(new DiningTable { Area = area2, TableName = $"Bàn 2-{i:D2}", Capacity = 4 });
-            db.DiningTables.Add(new DiningTable { Area = area2, TableName = "B2.3", Capacity = 4 });
-            for (int i = 1; i <= 4; i++) db.DiningTables.Add(new DiningTable { Area = areaVip, TableName = $"Vip-{i:D2}", Capacity = 4 });
+            // 4. Tables
+            for (int i = 1; i <= 8; i++)
+            {
+                db.DiningTables.Add(new DiningTable { Area = area1, TableName = $"Bàn {i:D2}", Capacity = 4 });
+            }
+            for (int i = 9; i <= 12; i++)
+            {
+                db.DiningTables.Add(new DiningTable { Area = area2, TableName = $"Bàn {i:D2}", Capacity = 2 });
+            }
 
-            // 5. Products (Mẫu một số món)
-            var catDoAn = categories.First(c => c.CategoryName == "ẤM CÁI BỤNG");
-            var catNuoc = categories.First(c => c.CategoryName == "NƯỚC GIẢI KHÁT");
-            var catMonNay = categories.First(c => c.CategoryName == "ĂN NÀY");
-            var catBia = categories.First(c => c.CategoryName == "BIA");
-            var catCombo = categories.First(c => c.CategoryName == "COMBO");
-            var catOc = categories.First(c => c.CategoryName == "ỐC NHÀ NỌ");
-            var catNoCaiBung = categories.First(c => c.CategoryName == "NO CÁI BỤNG");
-            var catChamCuon = categories.First(c => c.CategoryName == "CHẤM & CUỐN");
-            var catRauXanh = categories.First(c => c.CategoryName == "RAU XANH");
-            var catAnNo = categories.First(c => c.CategoryName == "ĂN NỌ");
-            var catPhuThu = categories.First(c => c.CategoryName == "PHỤ THU");
-            var catMarketing = categories.First(c => c.CategoryName == "Marketing");
-
+            // 5. Products
             db.Products.AddRange(
-                // BILL ITEMS
-                new Product { Category = catBia, ProductName = "Tiger bạc", Price = 29000, IsAvailable = true },
-                new Product { Category = catNuoc, ProductName = "Soda tắc xí muội", Price = 39000, IsAvailable = true },
-                new Product { Category = catNuoc, ProductName = "Pepsi", Price = 19000, IsAvailable = true },
-                new Product { Category = catNuoc, ProductName = "7 up", Price = 19000, IsAvailable = true },
-                new Product { Category = catNuoc, ProductName = "Nước suối", Price = 15000, IsAvailable = true },
-                new Product { Category = catNuoc, ProductName = "NƯỚC ÉP DƯA HẤU", Price = 0, IsAvailable = true },
-                new Product { Category = catCombo, ProductName = "COMBO ĐẬM VỊ", Price = 719000, IsAvailable = true },
-                new Product { Category = catOc, ProductName = "Ốc hương trứng muối", Price = 185000, IsAvailable = true },
-                new Product { Category = catNoCaiBung, ProductName = "Ếch núp rơm", Price = 125000, IsAvailable = true },
-                new Product { Category = catChamCuon, ProductName = "Gỏi xoài tôm dẻo", Price = 129000, IsAvailable = true },
-                new Product { Category = catRauXanh, ProductName = "Rau càng cua bò trứng", Price = 169000, IsAvailable = true },
-                new Product { Category = catMonNay, ProductName = "Sụn gà cháy tỏi", Price = 125000, IsAvailable = true },
-                new Product { Category = catAnNo, ProductName = "Khoai tây chiên", Price = 65000, IsAvailable = true },
-                new Product { Category = catPhuThu, ProductName = "KHĂN", Price = 2000, IsAvailable = true },
-                new Product { Category = catRauXanh, ProductName = "Rau thêm (tặng)", Price = 0, IsAvailable = true },
-                
-                // STATUS MESSAGES
-                new Product { Category = catMarketing, ProductName = "BÁO LÊN THAN", Price = 0, IsAvailable = true },
-                new Product { Category = catMarketing, ProductName = "BÁO XUỐNG LÒ BẾP", Price = 0, IsAvailable = true },
-                new Product { Category = catMarketing, ProductName = "BÁO LÊN LẨU", Price = 0, IsAvailable = true },
-                new Product { Category = catMarketing, ProductName = "BÁO LÊN BẾP", Price = 0, IsAvailable = true },
-
-                // SAMPLES
-                new Product { Category = catDoAn, ProductName = "Bún bò Huế", Price = 45000, IsAvailable = true, Description = "Bún bò Huế truyền thống" },
-                new Product { Category = catDoAn, ProductName = "Cơm sườn nướng", Price = 35000, IsAvailable = true, Description = "Cơm tấm sườn bì chả" },
-                new Product { Category = catNuoc, ProductName = "Cà phê sữa đá", Price = 25000, IsAvailable = true },
-                new Product { Category = catNuoc, ProductName = "Trà đào cam sả", Price = 35000, IsAvailable = true }
+                new Product { Category = cat1, ProductName = "Bún bò Huế", Price = 45000, IsAvailable = true },
+                new Product { Category = cat1, ProductName = "Phở Thìn đặc biệt", Price = 55000, IsAvailable = true },
+                new Product { Category = cat1, ProductName = "Cơm tấm sườn bì", Price = 40000, IsAvailable = true },
+                new Product { Category = cat2, ProductName = "Cà phê sữa đá", Price = 25000, IsAvailable = true },
+                new Product { Category = cat2, ProductName = "Trà đào cam sả", Price = 35000, IsAvailable = true },
+                new Product { Category = cat2, ProductName = "Nước cam ép", Price = 30000, IsAvailable = true },
+                new Product { Category = cat3, ProductName = "Chè khúc bạch", Price = 20000, IsAvailable = true },
+                new Product { Category = cat3, ProductName = "Kem bơ Đà Lạt", Price = 30000, IsAvailable = true }
             );
-
-            await db.SaveChangesAsync();
-        }
-        
-        // --- 10. ADMIN ACCOUNT SEEDING ---
-        var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Username == "admin");
-        if (adminUser == null)
-        {
-            db.Users.Add(new User 
-            { 
-                Username = "admin", 
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 11), 
-                FullName = "Quản trị viên", 
-                Role = 3 
-            });
+            
             await db.SaveChangesAsync();
         }
     }
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Error during production initialization: {ex.Message}");
+    Console.WriteLine($"Error during initialization: {ex.Message}");
 }
 
 app.Run();

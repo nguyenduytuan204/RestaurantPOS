@@ -133,6 +133,10 @@ public class AuthService : IAuthService
 
     private static string GetRoleLabel(byte role) => role switch
     {
-        0 => "ThuNgan", 1 => "PhucVu", 2 => "QuanLy", 3 => "Admin", _ => "Unknown"
+        3 => "Admin",
+        2 => "Manager",
+        1 => "Waiter",
+        0 => "Cashier",
+        _ => "Unknown"
     };
 }

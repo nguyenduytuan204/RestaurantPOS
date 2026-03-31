@@ -88,7 +88,7 @@ const Auth = (() => {
         if (!session.token || !session.username) return false;
 
         // Kiểm tra token chưa hết hạn (so sánh local)
-        if (new Date(user.expiresAt) < new Date()) {
+        if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
             logout(false); // hết hạn → xóa session
             return false;
         }
@@ -205,6 +205,7 @@ const Auth = (() => {
         logout,
         require,
         redirectByRole,
+        getSession,
         authHeaders,
         apiFetch,
         renderUserBadge,

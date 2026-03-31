@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantPOS.API.Data;
 using RestaurantPOS.API.Models;
@@ -22,6 +23,7 @@ public class VnPayController : ControllerBase
     }
 
     // POST /api/vnpay/create-payment/5
+    [Authorize(Roles = "Admin, Manager, Cashier")]
     [HttpPost("create-payment/{orderId}")]
     public async Task<IActionResult> CreatePayment(int orderId)
     {

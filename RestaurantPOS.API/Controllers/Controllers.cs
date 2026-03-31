@@ -24,6 +24,7 @@ public class AreasController : ControllerBase
         => _tableService = tableService;
 
     // GET /api/areas
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpGet]
     public async Task<IActionResult> GetFloorMap()
     {
@@ -32,6 +33,7 @@ public class AreasController : ControllerBase
     }
 
     // GET /api/areas/list
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpGet("list")]
     public async Task<IActionResult> GetAreas()
     {
@@ -40,6 +42,7 @@ public class AreasController : ControllerBase
     }
 
     // POST /api/areas
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> AddArea([FromBody] UpsertAreaDto dto)
     {
@@ -48,6 +51,7 @@ public class AreasController : ControllerBase
     }
 
     // PUT /api/areas/{id}
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateArea(int id, [FromBody] UpsertAreaDto dto)
     {
@@ -63,6 +67,7 @@ public class AreasController : ControllerBase
     }
 
     // DELETE /api/areas/{id}
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteArea(int id)
     {
@@ -71,7 +76,7 @@ public class AreasController : ControllerBase
     }
 
     // POST /api/areas/tables/{tableId}/open
-    [Authorize]
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpPost("tables/{tableId}/open")]
     public async Task<IActionResult> OpenTable(int tableId, [FromQuery] int? userId = null)
     {
@@ -97,6 +102,7 @@ public class AreasController : ControllerBase
     // --- TABLE MANAGEMENT ---
 
     // GET /api/areas/{id}/tables
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpGet("{id}/tables")]
     public async Task<IActionResult> GetTables(int id)
     {
@@ -105,6 +111,7 @@ public class AreasController : ControllerBase
     }
 
     // POST /api/areas/tables
+    [Authorize(Roles = "Admin")]
     [HttpPost("tables")]
     public async Task<IActionResult> AddTable([FromBody] UpsertTableDto dto)
     {
@@ -113,6 +120,7 @@ public class AreasController : ControllerBase
     }
 
     // PUT /api/areas/tables/{tableId}
+    [Authorize(Roles = "Admin")]
     [HttpPut("tables/{tableId}")]
     public async Task<IActionResult> UpdateTable(int tableId, [FromBody] UpsertTableDto dto)
     {
@@ -128,6 +136,7 @@ public class AreasController : ControllerBase
     }
 
     // DELETE /api/areas/tables/{tableId}
+    [Authorize(Roles = "Admin")]
     [HttpDelete("tables/{tableId}")]
     public async Task<IActionResult> DeleteTable(int tableId)
     {
@@ -151,7 +160,7 @@ public class ProductsController : ControllerBase
         => _productService = productService;
 
     // GET /api/products
-    // GET /api/products?categoryId=2
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpGet]
     public async Task<IActionResult> GetProducts([FromQuery] int? categoryId = null)
     {
@@ -160,6 +169,7 @@ public class ProductsController : ControllerBase
     }
 
     // GET /api/products/categories
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpGet("categories")]
     public async Task<IActionResult> GetCategories()
     {
@@ -168,6 +178,7 @@ public class ProductsController : ControllerBase
     }
 
     // POST /api/products
+    [Authorize(Roles = "Admin, Manager")]
     [HttpPost]
     public async Task<IActionResult> AddProduct([FromBody] UpsertProductDto dto)
     {
@@ -183,6 +194,7 @@ public class ProductsController : ControllerBase
     }
 
     // PUT /api/products/{id}
+    [Authorize(Roles = "Admin, Manager")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpsertProductDto dto)
     {
@@ -198,6 +210,7 @@ public class ProductsController : ControllerBase
     }
 
     // PATCH /api/products/{id}/toggle
+    [Authorize(Roles = "Admin, Manager")]
     [HttpPatch("{id}/toggle")]
     public async Task<IActionResult> ToggleProduct(int id)
     {
@@ -206,6 +219,7 @@ public class ProductsController : ControllerBase
     }
 
     // DELETE /api/products/{id}
+    [Authorize(Roles = "Admin, Manager")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
@@ -216,6 +230,7 @@ public class ProductsController : ControllerBase
     // --- CATEGORY MANAGEMENT ---
 
     // POST /api/products/categories
+    [Authorize(Roles = "Admin, Manager")]
     [HttpPost("categories")]
     public async Task<IActionResult> AddCategory([FromBody] UpsertCategoryDto dto)
     {
@@ -224,6 +239,7 @@ public class ProductsController : ControllerBase
     }
 
     // PUT /api/products/categories/{id}
+    [Authorize(Roles = "Admin, Manager")]
     [HttpPut("categories/{id}")]
     public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpsertCategoryDto dto)
     {
@@ -239,6 +255,7 @@ public class ProductsController : ControllerBase
     }
 
     // DELETE /api/products/categories/{id}
+    [Authorize(Roles = "Admin, Manager")]
     [HttpDelete("categories/{id}")]
     public async Task<IActionResult> DeleteCategory(int id)
     {
@@ -268,6 +285,7 @@ public class PaymentMethodsController : ControllerBase
     private readonly IOrderService _orderService;
     public PaymentMethodsController(IOrderService orderService) => _orderService = orderService;
 
+    [Authorize(Roles = "Admin, Manager, Cashier")]
     [HttpGet]
     public async Task<IActionResult> Get() => Ok(await _orderService.GetPaymentMethodsAsync());
 }
@@ -282,6 +300,7 @@ public class OrdersController : ControllerBase
         => _orderService = orderService;
 
     // GET /api/orders/5
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpGet("{orderId}")]
     public async Task<IActionResult> GetOrder(int orderId)
     {
@@ -298,6 +317,7 @@ public class OrdersController : ControllerBase
 
     // POST /api/orders/5/items
     // Body: { "productId": 3, "quantity": 2, "note": "Ít đá" }
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpPost("{orderId}/items")]
     public async Task<IActionResult> AddItem(int orderId, [FromBody] AddItemDto dto)
     {
@@ -313,6 +333,7 @@ public class OrdersController : ControllerBase
     }
 
     // DELETE /api/orders/5/items/12
+    [Authorize(Roles = "Admin, Manager, Cashier, Waiter")]
     [HttpDelete("{orderId}/items/{orderDetailId}")]
     public async Task<IActionResult> RemoveItem(int orderId, int orderDetailId)
     {
@@ -322,6 +343,7 @@ public class OrdersController : ControllerBase
 
     // POST /api/orders/5/checkout
     // Body: { "paymentMethodId": 1, "discount": 0, "customerPaid": 200000 }
+    [Authorize(Roles = "Admin, Manager, Cashier")]
     [HttpPost("{orderId}/checkout")]
     public async Task<IActionResult> Checkout(int orderId, [FromBody] CheckoutRequestDto dto)
     {
@@ -339,6 +361,7 @@ public class OrdersController : ControllerBase
     public class UpdateStaffDto { public int StaffId { get; set; } }
 
     // PUT /api/orders/5/staff
+    [Authorize(Roles = "Admin, Manager, Cashier")]
     [HttpPut("{orderId}/staff")]
     public async Task<IActionResult> UpdateStaff(int orderId, [FromBody] UpdateStaffDto dto)
     {
@@ -365,6 +388,7 @@ public class DashboardController : ControllerBase
     private readonly IDashboardService _svc;
     public DashboardController(IDashboardService svc) => _svc = svc;
 
+    [Authorize(Roles = "Admin, Manager")]
     [HttpGet]
     public async Task<IActionResult> Get()
     {
